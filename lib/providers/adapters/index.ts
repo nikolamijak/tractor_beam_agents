@@ -5,3 +5,5 @@
  */
 
 export { AnthropicAdapter } from './AnthropicAdapter';
+export { GroqAdapter } from './GroqAdapter';
+export { HuggingFaceAdapter } from './HuggingFaceAdapter';
