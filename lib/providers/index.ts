@@ -37,3 +37,7 @@ export * from './adapters';
 
 // Re-export rate limit parsing utilities
 export { parseRateLimitHeaders, parseResetTime } from './rateLimitParser';
+
+// Re-export ProviderRegistry
+export { ProviderRegistry, getProviderRegistry } from './ProviderRegistry';
+export type { ProviderRegistryOptions } from './ProviderRegistry';
