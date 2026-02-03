@@ -17,6 +17,7 @@ import {
 import type { AgentDefinition, AgentMessage, ModelWithProvider, TokenUsage } from '../db/types';
 import { getProviderRegistry } from '../providers';
 import type { IModelProvider, CompletionRequest, Message } from '../providers';
+import { RateLimitError } from '../errors/RateLimitError';
 
 export interface AgentExecutionContext {
   sessionId: string;
@@ -111,8 +112,21 @@ export class AgentExecutor {
         tools: agent.tools.length > 0 ? (agent.tools as any) : undefined, // Type assertion for JSONB
       };
 
-      // 5. Execute via provider adapter
-      const response = await adapter.complete(completionRequest);
+      // 5. Execute via provider adapter (with rate limit error handling)
+      let response;
+      try {
+        response = await adapter.complete(completionRequest);
+      } catch (error: any) {
+        // Check if error is 429 (rate limit)
+        if (error.statusCode === 429 || error.status === 429) {
+          const rateLimitInfo = adapter.getRateLimitInfo();
+          if (rateLimitInfo) {
+            throw new RateLimitError(providerName, rateLimitInfo);
+          }
+        }
+        // Re-throw other errors
+        throw error;
+      }
 
       // 5. Calculate cost if model pricing is available
       let totalCost = 0;
