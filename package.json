@@ -18,6 +18,7 @@
     "db:rollback": "npx knex migrate:rollback",
     "db:seed": "npx knex seed:run",
     "test:agent-system": "tsx scripts/test-agent-system.ts",
+    "test:workflow-events": "tsx scripts/test-workflow-events.ts",
     "verify:dbos": "node scripts/verify-dbos-setup.js"
   },
   "keywords": [],
