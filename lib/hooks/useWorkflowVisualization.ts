@@ -23,6 +23,7 @@
 import { useEffect } from 'react';
 import { useWorkflowSSE } from './useWorkflowSSE';
 import { useWorkflowStore } from '@/lib/store/workflowStore';
+import { useStepDetailsStore } from '@/lib/store/stepDetailsStore';
 import type { ConnectionMode } from './useWorkflowSSE';
 
 export interface UseWorkflowVisualizationResult {
@@ -72,6 +73,7 @@ export function useWorkflowVisualization(
 
   // Get store actions for updating node status and cost
   const { updateNodeStatus, recordStepCost } = useWorkflowStore();
+  const { setStepDetails } = useStepDetailsStore();
 
   // Process events and update store
   useEffect(() => {
@@ -95,11 +97,47 @@ export function useWorkflowVisualization(
           if (event.payload?.costUsd !== undefined) {
             recordStepCost(event.stepName, event.payload.costUsd);
           }
+
+          // Populate step details for sidebar (Phase 4 Plan 03)
+          setStepDetails(event.stepName, {
+            stepName: event.stepName,
+            output: event.payload?.output ?? null,
+            costUsd: event.payload?.costUsd ?? 0,
+            costBreakdown: event.payload?.tokensUsed
+              ? {
+                  inputTokens: (event.payload.tokensUsed as any)?.inputTokens ?? 0,
+                  outputTokens: (event.payload.tokensUsed as any)?.outputTokens ?? 0,
+                  cacheTokens: (event.payload.tokensUsed as any)?.cacheTokens,
+                  reasoningTokens: (event.payload.tokensUsed as any)?.reasoningTokens,
+                }
+              : null,
+            duration: event.durationMs ?? 0,
+            error: null,
+            timestamp: event.timestamp,
+          });
           break;
 
         case 'step:failed':
           // Step execution fails - mark as failed
           updateNodeStatus(event.stepName, 'failed');
+
+          // Populate step details for failed steps (Phase 4 Plan 03)
+          setStepDetails(event.stepName, {
+            stepName: event.stepName,
+            output: event.payload?.output ?? null,
+            costUsd: event.payload?.costUsd ?? 0,
+            costBreakdown: event.payload?.tokensUsed
+              ? {
+                  inputTokens: (event.payload.tokensUsed as any)?.inputTokens ?? 0,
+                  outputTokens: (event.payload.tokensUsed as any)?.outputTokens ?? 0,
+                  cacheTokens: (event.payload.tokensUsed as any)?.cacheTokens,
+                  reasoningTokens: (event.payload.tokensUsed as any)?.reasoningTokens,
+                }
+              : null,
+            duration: event.durationMs ?? 0,
+            error: event.payload?.error ?? 'Unknown error',
+            timestamp: event.timestamp,
+          });
           break;
 
         case 'workflow:error':
@@ -114,7 +152,7 @@ export function useWorkflowVisualization(
           }
       }
     }
-  }, [events, updateNodeStatus, recordStepCost]);
+  }, [events, updateNodeStatus, recordStepCost, setStepDetails]);
 
   return {
     isLoading,

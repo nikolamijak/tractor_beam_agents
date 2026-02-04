@@ -14,6 +14,7 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import { StepNode } from './WorkflowFlowchart/StepNode';
+import { StepDetailsSidebar } from './StepDetailsSidebar';
 import { useWorkflowLayout } from '@/lib/hooks/useWorkflowLayout';
 import { useWorkflowStore } from '@/lib/store/workflowStore';
 import { useWorkflowSteps } from '@/lib/hooks/useWorkflowSteps';
@@ -112,46 +113,51 @@ export function WorkflowFlowchart({ workflowId }: WorkflowFlowchartProps) {
   }
 
   return (
-    <div className="w-full h-[600px] bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 relative">
-      {/* Connection mode indicator */}
-      {mode === 'sse' && (
-        <div className="absolute top-4 right-4 bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold z-10">
-          🟢 Live
-        </div>
-      )}
-      {mode === 'polling' && (
-        <div className="absolute top-4 right-4 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-semibold z-10">
-          🔄 Polling
-        </div>
-      )}
+    <>
+      <div className="w-full h-[600px] bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 relative">
+        {/* Connection mode indicator */}
+        {mode === 'sse' && (
+          <div className="absolute top-4 right-4 bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold z-10">
+            🟢 Live
+          </div>
+        )}
+        {mode === 'polling' && (
+          <div className="absolute top-4 right-4 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-semibold z-10">
+            🔄 Polling
+          </div>
+        )}
 
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        fitView
-        minZoom={0.1}
-        maxZoom={2}
-        defaultEdgeOptions={{
-          type: 'smoothstep',
-          animated: false,
-        }}
-      >
-        <Controls showFitView />
-        <MiniMap
-          nodeColor={(node) => {
-            const status = node.data?.status;
-            if (status === 'completed') return '#86efac';
-            if (status === 'running') return '#93c5fd';
-            if (status === 'failed') return '#fca5a5';
-            return '#e5e7eb';
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          fitView
+          minZoom={0.1}
+          maxZoom={2}
+          defaultEdgeOptions={{
+            type: 'smoothstep',
+            animated: false,
           }}
-          maskColor="rgba(0, 0, 0, 0.1)"
-        />
-        <Background color="#aaa" gap={16} />
-      </ReactFlow>
-    </div>
+        >
+          <Controls showFitView />
+          <MiniMap
+            nodeColor={(node) => {
+              const status = node.data?.status;
+              if (status === 'completed') return '#86efac';
+              if (status === 'running') return '#93c5fd';
+              if (status === 'failed') return '#fca5a5';
+              return '#e5e7eb';
+            }}
+            maskColor="rgba(0, 0, 0, 0.1)"
+          />
+          <Background color="#aaa" gap={16} />
+        </ReactFlow>
+      </div>
+
+      {/* Step details sidebar (overlays canvas when step selected) */}
+      <StepDetailsSidebar />
+    </>
   );
 }
