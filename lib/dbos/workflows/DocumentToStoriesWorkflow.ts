@@ -15,6 +15,7 @@ import { getAgentExecutor } from '../../agents';
 import { sessionsRepo } from '../../db/repositories';
 import { safeRegisterWorkflow } from '../workflowRegistration';
 import { setWorkflowStepContext, clearWorkflowContext } from './eventHelpers';
+import { broadcastWorkflowEvent, closeWorkflowSubscriptions } from '../../sse';
 
 // ============================================================================
 // Workflow Input/Output Types
@@ -178,17 +179,33 @@ async function documentToStoriesWorkflowFunction(
     // Clear workflow context after step completes
     clearWorkflowContext();
 
+    const intakeDuration = Date.now() - intakeStartTime;
+    const intakeOutput = typeof intakeResult.output === 'string'
+      ? intakeResult.output.substring(0, 200)
+      : JSON.stringify(intakeResult.output).substring(0, 200);
+
     await DBOS.setEvent('step:intakeStep:completed', {
       timestamp: new Date().toISOString(),
-      durationMs: Date.now() - intakeStartTime,
-      output: typeof intakeResult.output === 'string'
-        ? intakeResult.output.substring(0, 200)
-        : JSON.stringify(intakeResult.output).substring(0, 200),
+      durationMs: intakeDuration,
+      output: intakeOutput,
       cost: {
         tokensUsed: intakeResult.tokensUsed,
         costUsd: intakeResult.costUsd,
       },
     });
+
+    // Broadcast SSE event to connected clients
+    await broadcastWorkflowEvent(
+      DBOS.workflowID,
+      'intakeStep',
+      'step:completed',
+      {
+        output: intakeOutput,
+        tokensUsed: intakeResult.tokensUsed,
+        costUsd: intakeResult.costUsd,
+      },
+      intakeDuration
+    );
 
     // Step 2: Ideation
     await DBOS.setEvent('step:ideationStep:started', {
@@ -208,17 +225,33 @@ async function documentToStoriesWorkflowFunction(
     // Clear workflow context after step completes
     clearWorkflowContext();
 
+    const ideationDuration = Date.now() - ideationStartTime;
+    const ideationOutput = typeof ideationResult.output === 'string'
+      ? ideationResult.output.substring(0, 200)
+      : JSON.stringify(ideationResult.output).substring(0, 200);
+
     await DBOS.setEvent('step:ideationStep:completed', {
       timestamp: new Date().toISOString(),
-      durationMs: Date.now() - ideationStartTime,
-      output: typeof ideationResult.output === 'string'
-        ? ideationResult.output.substring(0, 200)
-        : JSON.stringify(ideationResult.output).substring(0, 200),
+      durationMs: ideationDuration,
+      output: ideationOutput,
       cost: {
         tokensUsed: ideationResult.tokensUsed,
         costUsd: ideationResult.costUsd,
       },
     });
+
+    // Broadcast SSE event to connected clients
+    await broadcastWorkflowEvent(
+      DBOS.workflowID,
+      'ideationStep',
+      'step:completed',
+      {
+        output: ideationOutput,
+        tokensUsed: ideationResult.tokensUsed,
+        costUsd: ideationResult.costUsd,
+      },
+      ideationDuration
+    );
 
     // Step 3: Product Owner
     await DBOS.setEvent('step:productOwnerStep:started', {
@@ -238,17 +271,33 @@ async function documentToStoriesWorkflowFunction(
     // Clear workflow context after step completes
     clearWorkflowContext();
 
+    const productOwnerDuration = Date.now() - productOwnerStartTime;
+    const productOwnerOutput = typeof productOwnerResult.output === 'string'
+      ? productOwnerResult.output.substring(0, 200)
+      : JSON.stringify(productOwnerResult.output).substring(0, 200);
+
     await DBOS.setEvent('step:productOwnerStep:completed', {
       timestamp: new Date().toISOString(),
-      durationMs: Date.now() - productOwnerStartTime,
-      output: typeof productOwnerResult.output === 'string'
-        ? productOwnerResult.output.substring(0, 200)
-        : JSON.stringify(productOwnerResult.output).substring(0, 200),
+      durationMs: productOwnerDuration,
+      output: productOwnerOutput,
       cost: {
         tokensUsed: productOwnerResult.tokensUsed,
         costUsd: productOwnerResult.costUsd,
       },
     });
+
+    // Broadcast SSE event to connected clients
+    await broadcastWorkflowEvent(
+      DBOS.workflowID,
+      'productOwnerStep',
+      'step:completed',
+      {
+        output: productOwnerOutput,
+        tokensUsed: productOwnerResult.tokensUsed,
+        costUsd: productOwnerResult.costUsd,
+      },
+      productOwnerDuration
+    );
 
     // Extract story IDs and count
     const storyIds = Array.isArray(productOwnerResult.output?.stories)
@@ -258,6 +307,9 @@ async function documentToStoriesWorkflowFunction(
     DBOS.logger.info(
       `[DocumentToStories] Workflow completed: ${storyIds.length} stories created`
     );
+
+    // Close SSE subscriptions on successful completion
+    closeWorkflowSubscriptions(DBOS.workflowID);
 
     return {
       success: true,
@@ -274,6 +326,20 @@ async function documentToStoriesWorkflowFunction(
       error: (error as Error).message,
       stackTrace: (error as Error).stack,
     });
+
+    // Broadcast error event to connected clients
+    await broadcastWorkflowEvent(
+      DBOS.workflowID,
+      'workflow',
+      'workflow:error',
+      {
+        error: (error as Error).message,
+      }
+    );
+
+    // Close SSE subscriptions on error
+    closeWorkflowSubscriptions(DBOS.workflowID);
+
     DBOS.logger.error(`[DocumentToStories] Workflow failed: ${(error as Error).message}`);
     throw error;
   }
