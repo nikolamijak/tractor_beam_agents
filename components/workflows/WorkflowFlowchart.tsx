@@ -17,6 +17,7 @@ import { StepNode } from './WorkflowFlowchart/StepNode';
 import { useWorkflowLayout } from '@/lib/hooks/useWorkflowLayout';
 import { useWorkflowStore } from '@/lib/store/workflowStore';
 import { useWorkflowSteps } from '@/lib/hooks/useWorkflowSteps';
+import { useWorkflowVisualization } from '@/lib/hooks/useWorkflowVisualization';
 
 interface WorkflowFlowchartProps {
   workflowId: string;
@@ -27,6 +28,9 @@ const nodeTypes = {
 };
 
 export function WorkflowFlowchart({ workflowId }: WorkflowFlowchartProps) {
+  // Subscribe to real-time SSE events (updates Zustand store automatically)
+  const { isLoading: sseLoading, mode } = useWorkflowVisualization(workflowId);
+
   const { data: steps, loading, error } = useWorkflowSteps(workflowId);
   const { setNodes: setStoreNodes, setEdges: setStoreEdges } = useWorkflowStore();
 
@@ -108,7 +112,19 @@ export function WorkflowFlowchart({ workflowId }: WorkflowFlowchartProps) {
   }
 
   return (
-    <div className="w-full h-[600px] bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+    <div className="w-full h-[600px] bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 relative">
+      {/* Connection mode indicator */}
+      {mode === 'sse' && (
+        <div className="absolute top-4 right-4 bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold z-10">
+          🟢 Live
+        </div>
+      )}
+      {mode === 'polling' && (
+        <div className="absolute top-4 right-4 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-semibold z-10">
+          🔄 Polling
+        </div>
+      )}
+
       <ReactFlow
         nodes={nodes}
         edges={edges}
