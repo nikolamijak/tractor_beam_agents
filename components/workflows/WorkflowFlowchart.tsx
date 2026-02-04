@@ -43,7 +43,7 @@ export function WorkflowFlowchart({ workflowId }: WorkflowFlowchartProps) {
       id: step.functionId,
       type: 'step',
       data: {
-        stepName: step.functionName,
+        stepName: step.name,
         status: step.status.toLowerCase() as 'pending' | 'running' | 'completed' | 'failed',
       },
       position: { x: 0, y: 0 }, // Placeholder, will be updated by layout
@@ -70,8 +70,8 @@ export function WorkflowFlowchart({ workflowId }: WorkflowFlowchartProps) {
   const layoutedNodes = useWorkflowLayout(rawNodes, rawEdges);
 
   // React Flow internal state management
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
   // Update React Flow nodes/edges when layout changes
   useEffect(() => {
