@@ -7,6 +7,7 @@ import { DBOS } from '@dbos-inc/dbos-sdk';
 import { AgentExecutor } from '@/lib/agents/AgentExecutor';
 import { sessionsRepo } from '@/lib/db/repositories';
 import { safeRegisterWorkflow } from '../workflowRegistration';
+import { setWorkflowStepContext, clearWorkflowContext } from './eventHelpers';
 
 export interface PrototypeInput {
   userId: string;
@@ -188,6 +189,9 @@ async function prototypeWorkflowFunction(
       input: { hasIdea: !!input.idea, hastargetMarket: !!input.targetMarket },
     });
 
+    // Set workflow context for cost attribution
+    setWorkflowStepContext('prototypeConceptStep');
+
     const conceptStartTime = Date.now();
     const conceptResult = await DBOS.runStep(
       () =>
@@ -199,6 +203,9 @@ async function prototypeWorkflowFunction(
         ),
       { name: 'prototypeConceptStep' }
     );
+
+    // Clear workflow context after step completes
+    clearWorkflowContext();
 
     if (!conceptResult.success) {
       await DBOS.setEvent('step:prototypeConceptStep:failed', {
@@ -230,11 +237,17 @@ async function prototypeWorkflowFunction(
       input: { hasConceptResult: !!conceptResult.output },
     });
 
+    // Set workflow context for cost attribution
+    setWorkflowStepContext('productSpecStep');
+
     const productSpecStartTime = Date.now();
     const productSpecResult = await DBOS.runStep(
       () => productSpecStep(session.id, conceptResult.output),
       { name: 'productSpecStep' }
     );
+
+    // Clear workflow context after step completes
+    clearWorkflowContext();
 
     if (!productSpecResult.success) {
       await DBOS.setEvent('step:productSpecStep:failed', {
@@ -266,11 +279,17 @@ async function prototypeWorkflowFunction(
       input: { hasProductSpec: !!productSpecResult.output, technology: input.technology },
     });
 
+    // Set workflow context for cost attribution
+    setWorkflowStepContext('mvpDevelopmentStep');
+
     const mvpStartTime = Date.now();
     const mvpResult = await DBOS.runStep(
       () => mvpDevelopmentStep(session.id, productSpecResult.output, input.technology),
       { name: 'mvpDevelopmentStep' }
     );
+
+    // Clear workflow context after step completes
+    clearWorkflowContext();
 
     if (!mvpResult.success) {
       await DBOS.setEvent('step:mvpDevelopmentStep:failed', {
@@ -302,11 +321,17 @@ async function prototypeWorkflowFunction(
       input: { hasMVPCode: !!mvpResult.output },
     });
 
+    // Set workflow context for cost attribution
+    setWorkflowStepContext('mvpValidationStep');
+
     const validationStartTime = Date.now();
     const validationResult = await DBOS.runStep(
       () => mvpValidationStep(session.id, mvpResult.output),
       { name: 'mvpValidationStep' }
     );
+
+    // Clear workflow context after step completes
+    clearWorkflowContext();
 
     if (!validationResult.success) {
       await DBOS.setEvent('step:mvpValidationStep:failed', {

@@ -7,6 +7,7 @@ import { DBOS } from '@dbos-inc/dbos-sdk';
 import { AgentExecutor } from '@/lib/agents/AgentExecutor';
 import { sessionsRepo } from '@/lib/db/repositories';
 import { safeRegisterWorkflow } from '../workflowRegistration';
+import { setWorkflowStepContext, clearWorkflowContext } from './eventHelpers';
 
 export interface CodeReviewInput {
   userId: string;
@@ -172,11 +173,17 @@ async function codeReviewWorkflowFunction(
       input: { codeLength: input.code.length, language: input.language },
     });
 
+    // Set workflow context for cost attribution
+    setWorkflowStepContext('codeQualityReview');
+
     const codeQualityStartTime = Date.now();
     const codeQualityResult = await DBOS.runStep(
       () => codeReviewStep(session.id, input.code, input.filePath, input.language),
       { name: 'codeQualityReview' }
     );
+
+    // Clear workflow context after step completes
+    clearWorkflowContext();
 
     if (!codeQualityResult.success) {
       await DBOS.setEvent('step:codeQualityReview:failed', {
@@ -208,11 +215,17 @@ async function codeReviewWorkflowFunction(
       input: { codeLength: input.code.length, language: input.language },
     });
 
+    // Set workflow context for cost attribution
+    setWorkflowStepContext('securityReview');
+
     const securityStartTime = Date.now();
     const securityResult = await DBOS.runStep(
       () => securityReviewStep(session.id, input.code, input.language),
       { name: 'securityReview' }
     );
+
+    // Clear workflow context after step completes
+    clearWorkflowContext();
 
     if (!securityResult.success) {
       await DBOS.setEvent('step:securityReview:failed', {
@@ -244,11 +257,17 @@ async function codeReviewWorkflowFunction(
       input: { codeLength: input.code.length, language: input.language },
     });
 
+    // Set workflow context for cost attribution
+    setWorkflowStepContext('testGeneration');
+
     const testGenStartTime = Date.now();
     const testGenResult = await DBOS.runStep(
       () => testGenerationStep(session.id, input.code, input.language),
       { name: 'testGeneration' }
     );
+
+    // Clear workflow context after step completes
+    clearWorkflowContext();
 
     if (!testGenResult.success) {
       await DBOS.setEvent('step:testGeneration:failed', {

@@ -14,6 +14,7 @@ import { DBOS } from '@dbos-inc/dbos-sdk';
 import { getAgentExecutor } from '../../agents';
 import { sessionsRepo } from '../../db/repositories';
 import { safeRegisterWorkflow } from '../workflowRegistration';
+import { setWorkflowStepContext, clearWorkflowContext } from './eventHelpers';
 
 // ============================================================================
 // Workflow Input/Output Types
@@ -165,11 +166,17 @@ async function documentToStoriesWorkflowFunction(
       input: { documentLength: input.documentContent.length },
     });
 
+    // Set workflow context for cost attribution
+    setWorkflowStepContext('intakeStep');
+
     const intakeStartTime = Date.now();
     const intakeResult = await DBOS.runStep(
       () => intakeStep(session.id, input.documentContent),
       { name: 'intakeStep' }
     );
+
+    // Clear workflow context after step completes
+    clearWorkflowContext();
 
     await DBOS.setEvent('step:intakeStep:completed', {
       timestamp: new Date().toISOString(),
@@ -189,11 +196,17 @@ async function documentToStoriesWorkflowFunction(
       input: { hasIntakeResult: !!intakeResult.output },
     });
 
+    // Set workflow context for cost attribution
+    setWorkflowStepContext('ideationStep');
+
     const ideationStartTime = Date.now();
     const ideationResult = await DBOS.runStep(
       () => ideationStep(session.id, intakeResult.output),
       { name: 'ideationStep' }
     );
+
+    // Clear workflow context after step completes
+    clearWorkflowContext();
 
     await DBOS.setEvent('step:ideationStep:completed', {
       timestamp: new Date().toISOString(),
@@ -213,11 +226,17 @@ async function documentToStoriesWorkflowFunction(
       input: { hasIdeationResult: !!ideationResult.output },
     });
 
+    // Set workflow context for cost attribution
+    setWorkflowStepContext('productOwnerStep');
+
     const productOwnerStartTime = Date.now();
     const productOwnerResult = await DBOS.runStep(
       () => productOwnerStep(session.id, ideationResult.output),
       { name: 'productOwnerStep' }
     );
+
+    // Clear workflow context after step completes
+    clearWorkflowContext();
 
     await DBOS.setEvent('step:productOwnerStep:completed', {
       timestamp: new Date().toISOString(),

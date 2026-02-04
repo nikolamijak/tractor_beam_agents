@@ -7,6 +7,7 @@ import { DBOS } from '@dbos-inc/dbos-sdk';
 import { AgentExecutor } from '@/lib/agents/AgentExecutor';
 import { sessionsRepo } from '@/lib/db/repositories';
 import { safeRegisterWorkflow } from '../workflowRegistration';
+import { setWorkflowStepContext, clearWorkflowContext } from './eventHelpers';
 
 export interface StoryImplementationInput {
   userId: string;
@@ -139,11 +140,17 @@ Technology: ${input.technology}
       input: { storyId: input.storyId },
     });
 
+    // Set workflow context for cost attribution
+    setWorkflowStepContext('developerStep');
+
     const developerStartTime = Date.now();
     const developerResult = await DBOS.runStep(
       () => developerStep(session.id, storyInfo),
       { name: 'developerStep' }
     );
+
+    // Clear workflow context after step completes
+    clearWorkflowContext();
 
     if (!developerResult.success) {
       await DBOS.setEvent('step:developerStep:failed', {
@@ -176,11 +183,17 @@ Technology: ${input.technology}
       input: { hasDeveloperResult: !!developerResult.output },
     });
 
+    // Set workflow context for cost attribution
+    setWorkflowStepContext('qaStep');
+
     const qaStartTime = Date.now();
     const qaResult = await DBOS.runStep(
       () => qaStep(session.id, developerResult.output),
       { name: 'qaStep' }
     );
+
+    // Clear workflow context after step completes
+    clearWorkflowContext();
 
     if (!qaResult.success) {
       await DBOS.setEvent('step:qaStep:failed', {
@@ -213,11 +226,17 @@ Technology: ${input.technology}
       input: { hasQAResult: !!qaResult.output },
     });
 
+    // Set workflow context for cost attribution
+    setWorkflowStepContext('devOpsStep');
+
     const devOpsStartTime = Date.now();
     const devOpsResult = await DBOS.runStep(
       () => devOpsStep(session.id, `${developerResult.output}\n\nQA Results:\n${qaResult.output}`),
       { name: 'devOpsStep' }
     );
+
+    // Clear workflow context after step completes
+    clearWorkflowContext();
 
     if (!devOpsResult.success) {
       await DBOS.setEvent('step:devOpsStep:failed', {
