@@ -8,6 +8,7 @@ import { AgentExecutor } from '@/lib/agents/AgentExecutor';
 import { sessionsRepo } from '@/lib/db/repositories';
 import { safeRegisterWorkflow } from '../workflowRegistration';
 import { setWorkflowStepContext, clearWorkflowContext } from './eventHelpers';
+import { broadcastWorkflowEvent, closeWorkflowSubscriptions } from '../../sse';
 
 export interface StoryImplementationInput {
   userId: string;
@@ -152,12 +153,29 @@ Technology: ${input.technology}
     // Clear workflow context after step completes
     clearWorkflowContext();
 
+    const developerDuration = Date.now() - developerStartTime;
+
     if (!developerResult.success) {
       await DBOS.setEvent('step:developerStep:failed', {
         timestamp: new Date().toISOString(),
-        durationMs: Date.now() - developerStartTime,
+        durationMs: developerDuration,
         error: developerResult.error || 'Unknown error',
       });
+
+      // Broadcast failure event
+      await broadcastWorkflowEvent(
+        DBOS.workflowID,
+        'developerStep',
+        'step:failed',
+        {
+          error: developerResult.error || 'Unknown error',
+        },
+        developerDuration
+      );
+
+      // Close subscriptions on workflow early termination
+      closeWorkflowSubscriptions(DBOS.workflowID);
+
       return {
         success: false,
         storyId: input.storyId,
@@ -165,17 +183,32 @@ Technology: ${input.technology}
       };
     }
 
+    const developerOutput = typeof developerResult.output === 'string'
+      ? developerResult.output.substring(0, 200)
+      : JSON.stringify(developerResult.output).substring(0, 200);
+
     await DBOS.setEvent('step:developerStep:completed', {
       timestamp: new Date().toISOString(),
-      durationMs: Date.now() - developerStartTime,
-      output: typeof developerResult.output === 'string'
-        ? developerResult.output.substring(0, 200)
-        : JSON.stringify(developerResult.output).substring(0, 200),
+      durationMs: developerDuration,
+      output: developerOutput,
       cost: {
         tokensUsed: developerResult.tokensUsed,
         costUsd: developerResult.costUsd,
       },
     });
+
+    // Broadcast completion event
+    await broadcastWorkflowEvent(
+      DBOS.workflowID,
+      'developerStep',
+      'step:completed',
+      {
+        output: developerOutput,
+        tokensUsed: developerResult.tokensUsed,
+        costUsd: developerResult.costUsd,
+      },
+      developerDuration
+    );
 
     // Step 2: QA - Validate and test
     await DBOS.setEvent('step:qaStep:started', {
@@ -195,12 +228,29 @@ Technology: ${input.technology}
     // Clear workflow context after step completes
     clearWorkflowContext();
 
+    const qaDuration = Date.now() - qaStartTime;
+
     if (!qaResult.success) {
       await DBOS.setEvent('step:qaStep:failed', {
         timestamp: new Date().toISOString(),
-        durationMs: Date.now() - qaStartTime,
+        durationMs: qaDuration,
         error: qaResult.error || 'Unknown error',
       });
+
+      // Broadcast failure event
+      await broadcastWorkflowEvent(
+        DBOS.workflowID,
+        'qaStep',
+        'step:failed',
+        {
+          error: qaResult.error || 'Unknown error',
+        },
+        qaDuration
+      );
+
+      // Close subscriptions on workflow early termination
+      closeWorkflowSubscriptions(DBOS.workflowID);
+
       return {
         success: false,
         storyId: input.storyId,
@@ -208,17 +258,32 @@ Technology: ${input.technology}
       };
     }
 
+    const qaOutput = typeof qaResult.output === 'string'
+      ? qaResult.output.substring(0, 200)
+      : JSON.stringify(qaResult.output).substring(0, 200);
+
     await DBOS.setEvent('step:qaStep:completed', {
       timestamp: new Date().toISOString(),
-      durationMs: Date.now() - qaStartTime,
-      output: typeof qaResult.output === 'string'
-        ? qaResult.output.substring(0, 200)
-        : JSON.stringify(qaResult.output).substring(0, 200),
+      durationMs: qaDuration,
+      output: qaOutput,
       cost: {
         tokensUsed: qaResult.tokensUsed,
         costUsd: qaResult.costUsd,
       },
     });
+
+    // Broadcast completion event
+    await broadcastWorkflowEvent(
+      DBOS.workflowID,
+      'qaStep',
+      'step:completed',
+      {
+        output: qaOutput,
+        tokensUsed: qaResult.tokensUsed,
+        costUsd: qaResult.costUsd,
+      },
+      qaDuration
+    );
 
     // Step 3: DevOps - Deployment planning
     await DBOS.setEvent('step:devOpsStep:started', {
@@ -238,12 +303,29 @@ Technology: ${input.technology}
     // Clear workflow context after step completes
     clearWorkflowContext();
 
+    const devOpsDuration = Date.now() - devOpsStartTime;
+
     if (!devOpsResult.success) {
       await DBOS.setEvent('step:devOpsStep:failed', {
         timestamp: new Date().toISOString(),
-        durationMs: Date.now() - devOpsStartTime,
+        durationMs: devOpsDuration,
         error: devOpsResult.error || 'Unknown error',
       });
+
+      // Broadcast failure event
+      await broadcastWorkflowEvent(
+        DBOS.workflowID,
+        'devOpsStep',
+        'step:failed',
+        {
+          error: devOpsResult.error || 'Unknown error',
+        },
+        devOpsDuration
+      );
+
+      // Close subscriptions on workflow early termination
+      closeWorkflowSubscriptions(DBOS.workflowID);
+
       return {
         success: false,
         storyId: input.storyId,
@@ -251,17 +333,35 @@ Technology: ${input.technology}
       };
     }
 
+    const devOpsOutput = typeof devOpsResult.output === 'string'
+      ? devOpsResult.output.substring(0, 200)
+      : JSON.stringify(devOpsResult.output).substring(0, 200);
+
     await DBOS.setEvent('step:devOpsStep:completed', {
       timestamp: new Date().toISOString(),
-      durationMs: Date.now() - devOpsStartTime,
-      output: typeof devOpsResult.output === 'string'
-        ? devOpsResult.output.substring(0, 200)
-        : JSON.stringify(devOpsResult.output).substring(0, 200),
+      durationMs: devOpsDuration,
+      output: devOpsOutput,
       cost: {
         tokensUsed: devOpsResult.tokensUsed,
         costUsd: devOpsResult.costUsd,
       },
     });
+
+    // Broadcast completion event
+    await broadcastWorkflowEvent(
+      DBOS.workflowID,
+      'devOpsStep',
+      'step:completed',
+      {
+        output: devOpsOutput,
+        tokensUsed: devOpsResult.tokensUsed,
+        costUsd: devOpsResult.costUsd,
+      },
+      devOpsDuration
+    );
+
+    // Close subscriptions on successful completion
+    closeWorkflowSubscriptions(DBOS.workflowID);
 
     return {
       success: true,
@@ -278,6 +378,20 @@ Technology: ${input.technology}
       error: (error as Error).message,
       stackTrace: (error as Error).stack,
     });
+
+    // Broadcast error event
+    await broadcastWorkflowEvent(
+      DBOS.workflowID,
+      'workflow',
+      'workflow:error',
+      {
+        error: (error as Error).message,
+      }
+    );
+
+    // Close subscriptions on error
+    closeWorkflowSubscriptions(DBOS.workflowID);
+
     console.error('[StoryImplementationWorkflow] Error:', error);
     return {
       success: false,

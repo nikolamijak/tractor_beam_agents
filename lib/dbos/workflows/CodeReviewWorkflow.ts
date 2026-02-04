@@ -8,6 +8,7 @@ import { AgentExecutor } from '@/lib/agents/AgentExecutor';
 import { sessionsRepo } from '@/lib/db/repositories';
 import { safeRegisterWorkflow } from '../workflowRegistration';
 import { setWorkflowStepContext, clearWorkflowContext } from './eventHelpers';
+import { broadcastWorkflowEvent, closeWorkflowSubscriptions } from '../../sse';
 
 export interface CodeReviewInput {
   userId: string;
@@ -185,29 +186,53 @@ async function codeReviewWorkflowFunction(
     // Clear workflow context after step completes
     clearWorkflowContext();
 
+    const codeQualityDuration = Date.now() - codeQualityStartTime;
+
     if (!codeQualityResult.success) {
       await DBOS.setEvent('step:codeQualityReview:failed', {
         timestamp: new Date().toISOString(),
-        durationMs: Date.now() - codeQualityStartTime,
+        durationMs: codeQualityDuration,
         error: codeQualityResult.error || 'Unknown error',
       });
+      await broadcastWorkflowEvent(
+        DBOS.workflowID,
+        'codeQualityReview',
+        'step:failed',
+        { error: codeQualityResult.error || 'Unknown error' },
+        codeQualityDuration
+      );
+      closeWorkflowSubscriptions(DBOS.workflowID);
       return {
         success: false,
         error: 'Code quality review failed: ' + (codeQualityResult.error || 'Unknown error'),
       };
     }
 
+    const codeQualityOutput = typeof codeQualityResult.output === 'string'
+      ? codeQualityResult.output.substring(0, 200)
+      : JSON.stringify(codeQualityResult.output).substring(0, 200);
+
     await DBOS.setEvent('step:codeQualityReview:completed', {
       timestamp: new Date().toISOString(),
-      durationMs: Date.now() - codeQualityStartTime,
-      output: typeof codeQualityResult.output === 'string'
-        ? codeQualityResult.output.substring(0, 200)
-        : JSON.stringify(codeQualityResult.output).substring(0, 200),
+      durationMs: codeQualityDuration,
+      output: codeQualityOutput,
       cost: {
         tokensUsed: codeQualityResult.tokensUsed,
         costUsd: codeQualityResult.costUsd,
       },
     });
+
+    await broadcastWorkflowEvent(
+      DBOS.workflowID,
+      'codeQualityReview',
+      'step:completed',
+      {
+        output: codeQualityOutput,
+        tokensUsed: codeQualityResult.tokensUsed,
+        costUsd: codeQualityResult.costUsd,
+      },
+      codeQualityDuration
+    );
 
     // Step 2: Security Review
     await DBOS.setEvent('step:securityReview:started', {
@@ -227,29 +252,53 @@ async function codeReviewWorkflowFunction(
     // Clear workflow context after step completes
     clearWorkflowContext();
 
+    const securityDuration = Date.now() - securityStartTime;
+
     if (!securityResult.success) {
       await DBOS.setEvent('step:securityReview:failed', {
         timestamp: new Date().toISOString(),
-        durationMs: Date.now() - securityStartTime,
+        durationMs: securityDuration,
         error: securityResult.error || 'Unknown error',
       });
+      await broadcastWorkflowEvent(
+        DBOS.workflowID,
+        'securityReview',
+        'step:failed',
+        { error: securityResult.error || 'Unknown error' },
+        securityDuration
+      );
+      closeWorkflowSubscriptions(DBOS.workflowID);
       return {
         success: false,
         error: 'Security review failed: ' + (securityResult.error || 'Unknown error'),
       };
     }
 
+    const securityOutput = typeof securityResult.output === 'string'
+      ? securityResult.output.substring(0, 200)
+      : JSON.stringify(securityResult.output).substring(0, 200);
+
     await DBOS.setEvent('step:securityReview:completed', {
       timestamp: new Date().toISOString(),
-      durationMs: Date.now() - securityStartTime,
-      output: typeof securityResult.output === 'string'
-        ? securityResult.output.substring(0, 200)
-        : JSON.stringify(securityResult.output).substring(0, 200),
+      durationMs: securityDuration,
+      output: securityOutput,
       cost: {
         tokensUsed: securityResult.tokensUsed,
         costUsd: securityResult.costUsd,
       },
     });
+
+    await broadcastWorkflowEvent(
+      DBOS.workflowID,
+      'securityReview',
+      'step:completed',
+      {
+        output: securityOutput,
+        tokensUsed: securityResult.tokensUsed,
+        costUsd: securityResult.costUsd,
+      },
+      securityDuration
+    );
 
     // Step 3: Test Generation
     await DBOS.setEvent('step:testGeneration:started', {
@@ -269,32 +318,59 @@ async function codeReviewWorkflowFunction(
     // Clear workflow context after step completes
     clearWorkflowContext();
 
+    const testGenDuration = Date.now() - testGenStartTime;
+
     if (!testGenResult.success) {
       await DBOS.setEvent('step:testGeneration:failed', {
         timestamp: new Date().toISOString(),
-        durationMs: Date.now() - testGenStartTime,
+        durationMs: testGenDuration,
         error: testGenResult.error || 'Unknown error',
       });
+      await broadcastWorkflowEvent(
+        DBOS.workflowID,
+        'testGeneration',
+        'step:failed',
+        { error: testGenResult.error || 'Unknown error' },
+        testGenDuration
+      );
+      closeWorkflowSubscriptions(DBOS.workflowID);
       return {
         success: false,
         error: 'Test generation failed: ' + (testGenResult.error || 'Unknown error'),
       };
     }
 
+    const testGenOutput = typeof testGenResult.output === 'string'
+      ? testGenResult.output.substring(0, 200)
+      : JSON.stringify(testGenResult.output).substring(0, 200);
+
     await DBOS.setEvent('step:testGeneration:completed', {
       timestamp: new Date().toISOString(),
-      durationMs: Date.now() - testGenStartTime,
-      output: typeof testGenResult.output === 'string'
-        ? testGenResult.output.substring(0, 200)
-        : JSON.stringify(testGenResult.output).substring(0, 200),
+      durationMs: testGenDuration,
+      output: testGenOutput,
       cost: {
         tokensUsed: testGenResult.tokensUsed,
         costUsd: testGenResult.costUsd,
       },
     });
 
+    await broadcastWorkflowEvent(
+      DBOS.workflowID,
+      'testGeneration',
+      'step:completed',
+      {
+        output: testGenOutput,
+        tokensUsed: testGenResult.tokensUsed,
+        costUsd: testGenResult.costUsd,
+      },
+      testGenDuration
+    );
+
     // Calculate overall score based on reviews
     const overallScore = 'Review complete - check individual sections for details';
+
+    // Close subscriptions on successful completion
+    closeWorkflowSubscriptions(DBOS.workflowID);
 
     return {
       success: true,
@@ -311,6 +387,13 @@ async function codeReviewWorkflowFunction(
       error: (error as Error).message,
       stackTrace: (error as Error).stack,
     });
+    await broadcastWorkflowEvent(
+      DBOS.workflowID,
+      'workflow',
+      'workflow:error',
+      { error: (error as Error).message }
+    );
+    closeWorkflowSubscriptions(DBOS.workflowID);
     console.error('[CodeReviewWorkflow] Error:', error);
     return {
       success: false,

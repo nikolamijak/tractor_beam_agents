@@ -8,6 +8,7 @@ import { AgentExecutor } from '@/lib/agents/AgentExecutor';
 import { sessionsRepo } from '@/lib/db/repositories';
 import { safeRegisterWorkflow } from '../workflowRegistration';
 import { setWorkflowStepContext, clearWorkflowContext } from './eventHelpers';
+import { broadcastWorkflowEvent, closeWorkflowSubscriptions } from '../../sse';
 
 export interface PrototypeInput {
   userId: string;
@@ -207,29 +208,53 @@ async function prototypeWorkflowFunction(
     // Clear workflow context after step completes
     clearWorkflowContext();
 
+    const conceptDuration = Date.now() - conceptStartTime;
+
     if (!conceptResult.success) {
       await DBOS.setEvent('step:prototypeConceptStep:failed', {
         timestamp: new Date().toISOString(),
-        durationMs: Date.now() - conceptStartTime,
+        durationMs: conceptDuration,
         error: conceptResult.error || 'Unknown error',
       });
+      await broadcastWorkflowEvent(
+        DBOS.workflowID,
+        'prototypeConceptStep',
+        'step:failed',
+        { error: conceptResult.error || 'Unknown error' },
+        conceptDuration
+      );
+      closeWorkflowSubscriptions(DBOS.workflowID);
       return {
         success: false,
         error: 'Prototype concept step failed: ' + (conceptResult.error || 'Unknown error'),
       };
     }
 
+    const conceptOutput = typeof conceptResult.output === 'string'
+      ? conceptResult.output.substring(0, 200)
+      : JSON.stringify(conceptResult.output).substring(0, 200);
+
     await DBOS.setEvent('step:prototypeConceptStep:completed', {
       timestamp: new Date().toISOString(),
-      durationMs: Date.now() - conceptStartTime,
-      output: typeof conceptResult.output === 'string'
-        ? conceptResult.output.substring(0, 200)
-        : JSON.stringify(conceptResult.output).substring(0, 200),
+      durationMs: conceptDuration,
+      output: conceptOutput,
       cost: {
         tokensUsed: conceptResult.tokensUsed,
         costUsd: conceptResult.costUsd,
       },
     });
+
+    await broadcastWorkflowEvent(
+      DBOS.workflowID,
+      'prototypeConceptStep',
+      'step:completed',
+      {
+        output: conceptOutput,
+        tokensUsed: conceptResult.tokensUsed,
+        costUsd: conceptResult.costUsd,
+      },
+      conceptDuration
+    );
 
     // Step 2: Product Specification
     await DBOS.setEvent('step:productSpecStep:started', {
@@ -249,29 +274,53 @@ async function prototypeWorkflowFunction(
     // Clear workflow context after step completes
     clearWorkflowContext();
 
+    const productSpecDuration = Date.now() - productSpecStartTime;
+
     if (!productSpecResult.success) {
       await DBOS.setEvent('step:productSpecStep:failed', {
         timestamp: new Date().toISOString(),
-        durationMs: Date.now() - productSpecStartTime,
+        durationMs: productSpecDuration,
         error: productSpecResult.error || 'Unknown error',
       });
+      await broadcastWorkflowEvent(
+        DBOS.workflowID,
+        'productSpecStep',
+        'step:failed',
+        { error: productSpecResult.error || 'Unknown error' },
+        productSpecDuration
+      );
+      closeWorkflowSubscriptions(DBOS.workflowID);
       return {
         success: false,
         error: 'Product specification step failed: ' + (productSpecResult.error || 'Unknown error'),
       };
     }
 
+    const productSpecOutput = typeof productSpecResult.output === 'string'
+      ? productSpecResult.output.substring(0, 200)
+      : JSON.stringify(productSpecResult.output).substring(0, 200);
+
     await DBOS.setEvent('step:productSpecStep:completed', {
       timestamp: new Date().toISOString(),
-      durationMs: Date.now() - productSpecStartTime,
-      output: typeof productSpecResult.output === 'string'
-        ? productSpecResult.output.substring(0, 200)
-        : JSON.stringify(productSpecResult.output).substring(0, 200),
+      durationMs: productSpecDuration,
+      output: productSpecOutput,
       cost: {
         tokensUsed: productSpecResult.tokensUsed,
         costUsd: productSpecResult.costUsd,
       },
     });
+
+    await broadcastWorkflowEvent(
+      DBOS.workflowID,
+      'productSpecStep',
+      'step:completed',
+      {
+        output: productSpecOutput,
+        tokensUsed: productSpecResult.tokensUsed,
+        costUsd: productSpecResult.costUsd,
+      },
+      productSpecDuration
+    );
 
     // Step 3: MVP Development
     await DBOS.setEvent('step:mvpDevelopmentStep:started', {
@@ -291,29 +340,53 @@ async function prototypeWorkflowFunction(
     // Clear workflow context after step completes
     clearWorkflowContext();
 
+    const mvpDuration = Date.now() - mvpStartTime;
+
     if (!mvpResult.success) {
       await DBOS.setEvent('step:mvpDevelopmentStep:failed', {
         timestamp: new Date().toISOString(),
-        durationMs: Date.now() - mvpStartTime,
+        durationMs: mvpDuration,
         error: mvpResult.error || 'Unknown error',
       });
+      await broadcastWorkflowEvent(
+        DBOS.workflowID,
+        'mvpDevelopmentStep',
+        'step:failed',
+        { error: mvpResult.error || 'Unknown error' },
+        mvpDuration
+      );
+      closeWorkflowSubscriptions(DBOS.workflowID);
       return {
         success: false,
         error: 'MVP development step failed: ' + (mvpResult.error || 'Unknown error'),
       };
     }
 
+    const mvpOutput = typeof mvpResult.output === 'string'
+      ? mvpResult.output.substring(0, 200)
+      : JSON.stringify(mvpResult.output).substring(0, 200);
+
     await DBOS.setEvent('step:mvpDevelopmentStep:completed', {
       timestamp: new Date().toISOString(),
-      durationMs: Date.now() - mvpStartTime,
-      output: typeof mvpResult.output === 'string'
-        ? mvpResult.output.substring(0, 200)
-        : JSON.stringify(mvpResult.output).substring(0, 200),
+      durationMs: mvpDuration,
+      output: mvpOutput,
       cost: {
         tokensUsed: mvpResult.tokensUsed,
         costUsd: mvpResult.costUsd,
       },
     });
+
+    await broadcastWorkflowEvent(
+      DBOS.workflowID,
+      'mvpDevelopmentStep',
+      'step:completed',
+      {
+        output: mvpOutput,
+        tokensUsed: mvpResult.tokensUsed,
+        costUsd: mvpResult.costUsd,
+      },
+      mvpDuration
+    );
 
     // Step 4: MVP Validation
     await DBOS.setEvent('step:mvpValidationStep:started', {
@@ -333,29 +406,56 @@ async function prototypeWorkflowFunction(
     // Clear workflow context after step completes
     clearWorkflowContext();
 
+    const validationDuration = Date.now() - validationStartTime;
+
     if (!validationResult.success) {
       await DBOS.setEvent('step:mvpValidationStep:failed', {
         timestamp: new Date().toISOString(),
-        durationMs: Date.now() - validationStartTime,
+        durationMs: validationDuration,
         error: validationResult.error || 'Unknown error',
       });
+      await broadcastWorkflowEvent(
+        DBOS.workflowID,
+        'mvpValidationStep',
+        'step:failed',
+        { error: validationResult.error || 'Unknown error' },
+        validationDuration
+      );
+      closeWorkflowSubscriptions(DBOS.workflowID);
       return {
         success: false,
         error: 'MVP validation step failed: ' + (validationResult.error || 'Unknown error'),
       };
     }
 
+    const validationOutput = typeof validationResult.output === 'string'
+      ? validationResult.output.substring(0, 200)
+      : JSON.stringify(validationResult.output).substring(0, 200);
+
     await DBOS.setEvent('step:mvpValidationStep:completed', {
       timestamp: new Date().toISOString(),
-      durationMs: Date.now() - validationStartTime,
-      output: typeof validationResult.output === 'string'
-        ? validationResult.output.substring(0, 200)
-        : JSON.stringify(validationResult.output).substring(0, 200),
+      durationMs: validationDuration,
+      output: validationOutput,
       cost: {
         tokensUsed: validationResult.tokensUsed,
         costUsd: validationResult.costUsd,
       },
     });
+
+    await broadcastWorkflowEvent(
+      DBOS.workflowID,
+      'mvpValidationStep',
+      'step:completed',
+      {
+        output: validationOutput,
+        tokensUsed: validationResult.tokensUsed,
+        costUsd: validationResult.costUsd,
+      },
+      validationDuration
+    );
+
+    // Close subscriptions on successful completion
+    closeWorkflowSubscriptions(DBOS.workflowID);
 
     return {
       success: true,
@@ -372,6 +472,13 @@ async function prototypeWorkflowFunction(
       error: (error as Error).message,
       stackTrace: (error as Error).stack,
     });
+    await broadcastWorkflowEvent(
+      DBOS.workflowID,
+      'workflow',
+      'workflow:error',
+      { error: (error as Error).message }
+    );
+    closeWorkflowSubscriptions(DBOS.workflowID);
     console.error('[PrototypeWorkflow] Error:', error);
     return {
       success: false,
