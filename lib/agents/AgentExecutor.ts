@@ -18,6 +18,7 @@ import type { AgentDefinition, AgentMessage, ModelWithProvider, TokenUsage } fro
 import { getProviderRegistry } from '../providers';
 import type { IModelProvider, CompletionRequest, Message } from '../providers';
 import { RateLimitError } from '../errors/RateLimitError';
+import { getWorkflowContext } from '../context';
 
 export interface AgentExecutionContext {
   sessionId: string;
@@ -64,6 +65,14 @@ export class AgentExecutor {
     try {
       // 1. Load agent definition from database with model info
       const { agent, modelInfo } = await this.loadAgent(agentName);
+
+      // 2. Read workflow context if available
+      const workflowCtx = getWorkflowContext().getCurrentContext();
+      const workflowMetadata = workflowCtx ? {
+        workflowId: workflowCtx.workflowId,
+        stepName: workflowCtx.stepName,
+        stepStartTime: workflowCtx.startTime,
+      } : {};
 
       // 2. Build messages array (optionally including conversation history)
       const messagesArray = await this.buildMessages(input, context);
@@ -159,7 +168,7 @@ export class AgentExecutor {
         },
         totalCost,
         modelInfo,
-        context.metadata
+        { ...workflowMetadata, ...(context.metadata || {}) }  // Merge workflow context with user metadata
       );
 
       // 7. Update session cost aggregates
