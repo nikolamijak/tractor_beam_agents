@@ -19,6 +19,7 @@
     "db:seed": "npx knex seed:run",
     "test:agent-system": "tsx scripts/test-agent-system.ts",
     "test:workflow-events": "tsx scripts/test-workflow-events.ts",
+    "test:workflow-events-api": "tsx scripts/test-workflow-events-api.ts",
     "verify:dbos": "node scripts/verify-dbos-setup.js"
   },
   "keywords": [],
