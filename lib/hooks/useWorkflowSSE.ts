@@ -26,7 +26,7 @@ import { useEffect, useState, useRef } from 'react';
 import { SSEConnectionFallback } from '@/lib/sse/SSEConnectionFallback';
 import type { WorkflowEvent } from '@/lib/sse/types';
 
-type ConnectionMode = 'sse' | 'polling' | 'connecting' | 'disconnected';
+export type ConnectionMode = 'sse' | 'polling' | 'connecting' | 'disconnected';
 
 export interface UseWorkflowSSEOptions {
   /**
