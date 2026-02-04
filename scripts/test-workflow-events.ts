@@ -11,14 +11,18 @@ async function testWorkflowEvents() {
   try {
     console.log('Initializing DBOS...');
 
+    // Build connection URL
+    const dbHost = process.env.DB_HOST || 'localhost';
+    const dbPort = process.env.DB_PORT || '5432';
+    const dbUser = process.env.DB_USER || 'dmap_user';
+    const dbPassword = process.env.DB_PASSWORD || 'dmap_dev_password';
+    const dbName = process.env.DB_NAME || 'dmap';
+    const connectionUrl = `postgresql://${dbUser}:${dbPassword}@${dbHost}:${dbPort}/${dbName}`;
+
     // Configure and launch DBOS
     DBOS.setConfig({
       name: 'test-events',
-      hostname: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '5432'),
-      username: process.env.DB_USER || 'dmap_user',
-      password: process.env.DB_PASSWORD || 'dmap_dev_password',
-      app_db_name: process.env.DB_NAME || 'dmap',
+      systemDatabaseUrl: connectionUrl,
     });
 
     await DBOS.launch();
@@ -28,11 +32,11 @@ async function testWorkflowEvents() {
     const knexClient = knex({
       client: 'pg',
       connection: {
-        host: process.env.DB_HOST || 'localhost',
-        port: parseInt(process.env.DB_PORT || '5432'),
-        user: process.env.DB_USER || 'dmap_user',
-        password: process.env.DB_PASSWORD || 'dmap_dev_password',
-        database: process.env.DB_NAME || 'dmap',
+        host: dbHost,
+        port: parseInt(dbPort),
+        user: dbUser,
+        password: dbPassword,
+        database: dbName,
       },
     });
 
