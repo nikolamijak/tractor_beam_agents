@@ -72,8 +72,16 @@ export function useWorkflowVisualization(
   const { events, isLoading, mode } = useWorkflowSSE(workflowId);
 
   // Get store actions for updating node status and cost
-  const { updateNodeStatus, recordStepCost } = useWorkflowStore();
+  const { updateNodeStatus, recordStepCost, setTotalStepCount, incrementCompletedSteps } = useWorkflowStore();
   const { setStepDetails } = useStepDetailsStore();
+
+  // Set total step count when nodes are loaded
+  useEffect(() => {
+    const totalSteps = useWorkflowStore.getState().nodes.length;
+    if (totalSteps > 0) {
+      setTotalStepCount(totalSteps);
+    }
+  }, [setTotalStepCount]);
 
   // Process events and update store
   useEffect(() => {
@@ -97,6 +105,9 @@ export function useWorkflowVisualization(
           if (event.payload?.costUsd !== undefined) {
             recordStepCost(event.stepName, event.payload.costUsd);
           }
+
+          // Update progress
+          incrementCompletedSteps();
 
           // Populate step details for sidebar (Phase 4 Plan 03)
           setStepDetails(event.stepName, {
