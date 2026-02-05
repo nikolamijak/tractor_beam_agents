@@ -2,7 +2,7 @@
 
 import { useWorkflow } from '@/lib/hooks/useWorkflow';
 import { WorkflowFlowchart } from './WorkflowFlowchart';
-import { useWorkflowStore, selectCumulativeCost } from '@/lib/store/workflowStore';
+import { useWorkflowStore, selectCumulativeCost, selectProgress } from '@/lib/store/workflowStore';
 
 interface WorkflowVisualizationProps {
   workflowId: string;
@@ -21,6 +21,7 @@ export function WorkflowVisualization({ workflowId }: WorkflowVisualizationProps
     { enablePolling: true }
   );
   const cumulativeCost = useWorkflowStore(selectCumulativeCost);
+  const progress = useWorkflowStore(selectProgress);
 
   const formatCost = (cost: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -75,6 +76,31 @@ export function WorkflowVisualization({ workflowId }: WorkflowVisualizationProps
             {workflow.status}
           </span>
         </div>
+
+        {/* Progress Bar */}
+        {progress.total > 0 && (
+          <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Workflow Progress
+              </span>
+              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                {progress.completed} of {progress.total} steps completed
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+              <div
+                className="bg-blue-600 dark:bg-blue-500 h-2.5 rounded-full transition-all duration-300 ease-in-out"
+                style={{ width: `${progress.percentage}%` }}
+              />
+            </div>
+            <div className="mt-1 text-right">
+              <span className="text-xs text-gray-600 dark:text-gray-400">
+                {progress.percentage}%
+              </span>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div>
