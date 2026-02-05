@@ -13,6 +13,10 @@ interface WorkflowState {
   cumulativeCost: number;
   stepCosts: Record<string, number>;
 
+  // Progress tracking
+  completedStepCount: number;
+  totalStepCount: number;
+
   // Actions
   setNodes: (nodes: Node[]) => void;
   setEdges: (edges: Edge[]) => void;
@@ -22,6 +26,8 @@ interface WorkflowState {
   ) => void;
   setSelectedStep: (stepName: string | null) => void;
   recordStepCost: (stepName: string, cost: number) => void;
+  setTotalStepCount: (count: number) => void;
+  incrementCompletedSteps: () => void;
   reset: () => void;
 }
 
@@ -31,6 +37,8 @@ export const useWorkflowStore = create<WorkflowState>((set) => ({
   selectedStepName: null,
   cumulativeCost: 0,
   stepCosts: {},
+  completedStepCount: 0,
+  totalStepCount: 0,
 
   setNodes: (nodes) => set({ nodes }),
 
@@ -56,6 +64,13 @@ export const useWorkflowStore = create<WorkflowState>((set) => ({
       };
     }),
 
+  setTotalStepCount: (count) => set({ totalStepCount: count }),
+
+  incrementCompletedSteps: () =>
+    set((state) => ({
+      completedStepCount: state.completedStepCount + 1,
+    })),
+
   reset: () =>
     set({
       nodes: [],
@@ -63,9 +78,21 @@ export const useWorkflowStore = create<WorkflowState>((set) => ({
       selectedStepName: null,
       cumulativeCost: 0,
       stepCosts: {},
+      completedStepCount: 0,
+      totalStepCount: 0,
     }),
 }));
 
 // Selector for cumulative cost to prevent re-renders on node changes
 export const selectCumulativeCost = (state: WorkflowState) =>
   state.cumulativeCost;
+
+// Selector for progress percentage to prevent re-renders
+export const selectProgress = (state: WorkflowState) => ({
+  completed: state.completedStepCount,
+  total: state.totalStepCount,
+  percentage:
+    state.totalStepCount > 0
+      ? Math.round((state.completedStepCount / state.totalStepCount) * 100)
+      : 0,
+});
