@@ -39,5 +39,5 @@ export function useWorkflowLayout(nodes: Node[], edges: Edge[]): Node[] {
         },
       };
     });
-  }, [JSON.stringify(nodes.map((n) => n.id)), JSON.stringify(edges)]);
+  }, [nodes.length, edges.length, nodes.map(n => n.id).join(','), edges.map(e => `${e.source}-${e.target}`).join(',')]);
 }
