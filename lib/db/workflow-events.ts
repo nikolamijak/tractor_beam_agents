@@ -78,6 +78,31 @@ export async function getWorkflowStatus(workflowId: string): Promise<WorkflowSta
 }
 
 /**
+ * Get all workflow executions from dbos.workflow_status table.
+ * Returns workflows ordered by created_at DESC (most recent first).
+ *
+ * @param limit - Maximum number of workflows to return (default: 50)
+ * @param offset - Number of workflows to skip (default: 0)
+ */
+export async function getAllWorkflows(limit: number = 50, offset: number = 0): Promise<WorkflowStatus[]> {
+  const rows = await db('dbos.workflow_status')
+    .orderBy('created_at', 'desc')
+    .limit(limit)
+    .offset(offset)
+    .select('workflow_uuid', 'name', 'status', 'created_at', 'updated_at', 'output', 'error');
+
+  return rows.map(row => ({
+    workflow_uuid: row.workflow_uuid,
+    name: row.name,
+    status: row.status,
+    created_at: new Date(row.created_at),
+    updated_at: new Date(row.updated_at),
+    output: row.output ? (typeof row.output === 'string' ? JSON.parse(row.output) : row.output) : null,
+    error: row.error || null
+  }));
+}
+
+/**
  * Get historical event changes from dbos.workflow_events_history table.
  * Useful for seeing how event values changed over time.
  *
