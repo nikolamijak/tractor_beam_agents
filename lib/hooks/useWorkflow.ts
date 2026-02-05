@@ -39,16 +39,13 @@ export function useWorkflow(workflowId: string, options: UseWorkflowOptions = {}
     maxInterval: 2000,
   });
 
-  useEffect(() => {
-    // If polling is enabled, use polling results
-    if (options.enablePolling) {
-      setData(pollingResult.data);
-      setLoading(pollingResult.loading);
-      setError(pollingResult.error);
-      return;
-    }
+  // When polling is enabled, return polling results directly (no state duplication)
+  if (options.enablePolling) {
+    return pollingResult;
+  }
 
-    // Otherwise, single fetch (backward compatibility)
+  // Otherwise, single fetch (backward compatibility)
+  useEffect(() => {
     const fetchOnce = async () => {
       try {
         const response = await fetch(`/api/workflows/${workflowId}`);
@@ -67,10 +64,7 @@ export function useWorkflow(workflowId: string, options: UseWorkflowOptions = {}
     };
 
     fetchOnce();
-    // CRITICAL: Only depend on workflowId and enablePolling flag
-    // Do NOT depend on pollingResult - that creates infinite loop because
-    // pollingResult.data/loading/error are object references that change on every update
-  }, [workflowId, options.enablePolling]);
+  }, [workflowId]);
 
   return { data, loading, error };
 }
