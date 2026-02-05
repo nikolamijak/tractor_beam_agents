@@ -2,6 +2,7 @@
 
 import { useWorkflow } from '@/lib/hooks/useWorkflow';
 import { WorkflowFlowchart } from './WorkflowFlowchart';
+import { useWorkflowStore, selectCumulativeCost } from '@/lib/store/workflowStore';
 
 interface WorkflowVisualizationProps {
   workflowId: string;
@@ -19,6 +20,16 @@ export function WorkflowVisualization({ workflowId }: WorkflowVisualizationProps
     workflowId,
     { enablePolling: true }
   );
+  const cumulativeCost = useWorkflowStore(selectCumulativeCost);
+
+  const formatCost = (cost: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 4,
+      maximumFractionDigits: 4,
+    }).format(cost);
+  };
 
   if (workflowLoading) {
     return (
@@ -93,6 +104,20 @@ export function WorkflowVisualization({ workflowId }: WorkflowVisualizationProps
             <pre className="text-sm bg-gray-50 dark:bg-gray-900 p-3 rounded border border-gray-200 dark:border-gray-700 overflow-x-auto text-gray-900 dark:text-gray-100">
               {JSON.stringify(workflow.input, null, 2)}
             </pre>
+          </div>
+        )}
+
+        {/* Cumulative Cost Display */}
+        {cumulativeCost > 0 && (
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Cumulative Cost:
+              </span>
+              <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                {formatCost(cumulativeCost)}
+              </span>
+            </div>
           </div>
         )}
 
