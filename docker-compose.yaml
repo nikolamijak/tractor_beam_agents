@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: tractor-beam-postgres
+    restart: unless-stopped
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_DB: tractor_beam
+      POSTGRES_USER: tractor_beam_user
+      POSTGRES_PASSWORD: tractor_beam_password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U dmap_user -d dmap']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tractor-beam-network
+
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  tractor-beam-network:
+    driver: bridge

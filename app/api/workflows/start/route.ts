@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     switch (body.workflowName) {
       case 'DocumentToStories':
         // Validate required inputs
-        const required = ['userId', 'documentPath', 'documentContent'];
+        const required = ['documentContent'];
         for (const field of required) {
           if (!body.input?.[field]) {
             return NextResponse.json(
@@ -53,8 +53,8 @@ export async function POST(request: NextRequest) {
 
         // Start workflow
         const handle = await startDocumentToStoriesWorkflow({
-          userId: body.input.userId,
-          documentPath: body.input.documentPath,
+          userId: body.input.userId || "Nikola Mijakovski",
+          documentPath: body.input.documentPath || "kurac",
           documentContent: body.input.documentContent,
           technology: body.input.technology,
         });

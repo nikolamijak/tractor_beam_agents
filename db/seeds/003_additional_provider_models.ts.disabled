@@ -1,0 +1,775 @@
+import type { Knex } from 'knex';
+
+/**
+ * Additional models for OpenAI and Groq providers
+ * Adds missing models discovered from official documentation (January 2026)
+ *
+ * Sources:
+ * - https://platform.openai.com/docs/models
+ * - https://platform.openai.com/docs/pricing
+ * - https://groq.com/pricing
+ * - https://groq.com/blog/groqcloud-now-offers-qwen-2-5-32b-and-deepseek-r1-distill-qwen-32b
+ */
+export async function seed(knex: Knex): Promise<void> {
+  // ============================================================================
+  // OPENAI - ADDITIONAL MODELS
+  // ============================================================================
+
+  const openaiProvider = await knex('providers')
+    .where({ provider_name: 'openai' })
+    .first();
+
+  if (!openaiProvider) {
+    throw new Error('OpenAI provider not found. Run 003_multi_provider_models.ts first.');
+  }
+
+  const openaiProviderId = openaiProvider.id;
+
+  const additionalOpenAIModels = [
+    // GPT-4o Mini
+    {
+      provider_id: openaiProviderId,
+      model_name: 'gpt-4o-mini',
+      display_name: 'GPT-4o Mini',
+      description: 'Most cost-efficient small model with vision capabilities',
+      model_family: 'gpt-4',
+      is_active: true,
+      is_recommended: true,
+      capabilities: JSON.stringify({
+        vision: true,
+        function_calling: true,
+        streaming: true,
+        prompt_caching: false,
+        json_mode: true,
+      }),
+      max_tokens: 16384,
+      context_window: 128000,
+      supports_streaming: true,
+      supports_function_calling: true,
+      supports_vision: true,
+      supports_prompt_caching: false,
+      pricing: JSON.stringify({
+        input_per_mtok: 0.15,
+        output_per_mtok: 0.60,
+        context_pricing_tiers: [
+          { min_tokens: 0, max_tokens: 128000, input_per_mtok: 0.15 },
+        ],
+      }),
+      performance_tier: 'fast',
+      avg_latency_ms: 800,
+      release_date: '2024-07-18',
+      metadata: JSON.stringify({
+        category: 'high_volume',
+        use_cases: ['chat', 'vision', 'classification', 'simple_tasks'],
+        knowledge_cutoff: '2023-10',
+      }),
+    },
+
+    // GPT-4.1 Series
+    {
+      provider_id: openaiProviderId,
+      model_name: 'gpt-4.1',
+      display_name: 'GPT-4.1',
+      description: 'Smartest non-reasoning model with 1M context window',
+      model_family: 'gpt-4.1',
+      is_active: true,
+      is_recommended: true,
+      capabilities: JSON.stringify({
+        vision: true,
+        function_calling: true,
+        streaming: true,
+        prompt_caching: false,
+        json_mode: true,
+      }),
+      max_tokens: 16384,
+      context_window: 1000000, // 1M context
+      supports_streaming: true,
+      supports_function_calling: true,
+      supports_vision: true,
+      supports_prompt_caching: false,
+      pricing: JSON.stringify({
+        input_per_mtok: 2.0,
+        output_per_mtok: 8.0,
+        context_pricing_tiers: [
+          { min_tokens: 0, max_tokens: 1000000, input_per_mtok: 2.0 },
+        ],
+      }),
+      performance_tier: 'balanced',
+      avg_latency_ms: 2200,
+      release_date: '2025-12-17',
+      metadata: JSON.stringify({
+        category: 'general_purpose',
+        use_cases: ['long_context', 'coding', 'analysis', 'reasoning'],
+      }),
+    },
+    {
+      provider_id: openaiProviderId,
+      model_name: 'gpt-4.1-mini',
+      display_name: 'GPT-4.1 Mini',
+      description: 'Smaller, faster version of GPT-4.1 with 1M context',
+      model_family: 'gpt-4.1',
+      is_active: true,
+      is_recommended: false,
+      capabilities: JSON.stringify({
+        vision: true,
+        function_calling: true,
+        streaming: true,
+        prompt_caching: false,
+        json_mode: true,
+      }),
+      max_tokens: 16384,
+      context_window: 1000000,
+      supports_streaming: true,
+      supports_function_calling: true,
+      supports_vision: true,
+      supports_prompt_caching: false,
+      pricing: JSON.stringify({
+        input_per_mtok: 1.0,
+        output_per_mtok: 4.0,
+        context_pricing_tiers: [
+          { min_tokens: 0, max_tokens: 1000000, input_per_mtok: 1.0 },
+        ],
+      }),
+      performance_tier: 'fast',
+      avg_latency_ms: 1500,
+      release_date: '2025-12-17',
+      metadata: JSON.stringify({
+        category: 'high_volume',
+        use_cases: ['long_context', 'chat', 'classification'],
+      }),
+    },
+    {
+      provider_id: openaiProviderId,
+      model_name: 'gpt-4.1-nano',
+      display_name: 'GPT-4.1 Nano',
+      description: 'Fastest, most cost-efficient version of GPT-4.1',
+      model_family: 'gpt-4.1',
+      is_active: true,
+      is_recommended: false,
+      capabilities: JSON.stringify({
+        vision: false,
+        function_calling: true,
+        streaming: true,
+        prompt_caching: false,
+        json_mode: true,
+      }),
+      max_tokens: 8192,
+      context_window: 128000,
+      supports_streaming: true,
+      supports_function_calling: true,
+      supports_vision: false,
+      supports_prompt_caching: false,
+      pricing: JSON.stringify({
+        input_per_mtok: 0.5,
+        output_per_mtok: 2.0,
+        context_pricing_tiers: [
+          { min_tokens: 0, max_tokens: 128000, input_per_mtok: 0.5 },
+        ],
+      }),
+      performance_tier: 'fast',
+      avg_latency_ms: 800,
+      release_date: '2025-12-17',
+      metadata: JSON.stringify({
+        category: 'high_volume',
+        use_cases: ['simple_tasks', 'classification', 'extraction'],
+      }),
+    },
+
+    // O3 Series (Reasoning Models)
+    {
+      provider_id: openaiProviderId,
+      model_name: 'o3',
+      display_name: 'O3',
+      description: 'Latest reasoning model for complex multi-step problems',
+      model_family: 'o3',
+      is_active: true,
+      is_recommended: true,
+      capabilities: JSON.stringify({
+        vision: false,
+        function_calling: false,
+        streaming: true,
+        prompt_caching: false,
+        reasoning: true,
+      }),
+      max_tokens: 65536,
+      context_window: 200000,
+      supports_streaming: true,
+      supports_function_calling: false,
+      supports_vision: false,
+      supports_prompt_caching: false,
+      pricing: JSON.stringify({
+        input_per_mtok: 10.0,
+        output_per_mtok: 40.0,
+        reasoning_per_mtok: 40.0,
+        context_pricing_tiers: [
+          { min_tokens: 0, max_tokens: 200000, input_per_mtok: 10.0 },
+        ],
+      }),
+      performance_tier: 'powerful',
+      avg_latency_ms: 12000,
+      release_date: '2025-12-20',
+      metadata: JSON.stringify({
+        category: 'advanced_reasoning',
+        use_cases: ['complex_math', 'science', 'research', 'problem_solving'],
+      }),
+    },
+    {
+      provider_id: openaiProviderId,
+      model_name: 'o3-mini',
+      display_name: 'O3 Mini',
+      description: 'Small reasoning model optimized for science, math, and coding',
+      model_family: 'o3',
+      is_active: true,
+      is_recommended: true,
+      capabilities: JSON.stringify({
+        vision: false,
+        function_calling: false,
+        streaming: true,
+        prompt_caching: false,
+        reasoning: true,
+      }),
+      max_tokens: 65536,
+      context_window: 200000,
+      supports_streaming: true,
+      supports_function_calling: false,
+      supports_vision: false,
+      supports_prompt_caching: false,
+      pricing: JSON.stringify({
+        input_per_mtok: 1.1,
+        output_per_mtok: 4.4,
+        reasoning_per_mtok: 4.4,
+        context_pricing_tiers: [
+          { min_tokens: 0, max_tokens: 200000, input_per_mtok: 1.1 },
+        ],
+      }),
+      performance_tier: 'balanced',
+      avg_latency_ms: 6000,
+      release_date: '2025-12-20',
+      metadata: JSON.stringify({
+        category: 'reasoning',
+        use_cases: ['coding', 'math', 'science', 'STEM'],
+      }),
+    },
+    {
+      provider_id: openaiProviderId,
+      model_name: 'o3-pro',
+      display_name: 'O3 Pro',
+      description: 'O3 with extended compute for harder problems requiring better consistency',
+      model_family: 'o3',
+      is_active: true,
+      is_recommended: false,
+      capabilities: JSON.stringify({
+        vision: false,
+        function_calling: false,
+        streaming: true,
+        prompt_caching: false,
+        reasoning: true,
+      }),
+      max_tokens: 65536,
+      context_window: 200000,
+      supports_streaming: true,
+      supports_function_calling: false,
+      supports_vision: false,
+      supports_prompt_caching: false,
+      pricing: JSON.stringify({
+        input_per_mtok: 20.0,
+        output_per_mtok: 80.0,
+        reasoning_per_mtok: 80.0,
+        context_pricing_tiers: [
+          { min_tokens: 0, max_tokens: 200000, input_per_mtok: 20.0 },
+        ],
+      }),
+      performance_tier: 'powerful',
+      avg_latency_ms: 20000,
+      release_date: '2025-12-20',
+      metadata: JSON.stringify({
+        category: 'advanced_reasoning',
+        use_cases: ['research', 'complex_analysis', 'theorem_proving'],
+      }),
+    },
+
+    // O1 Additional Models
+    {
+      provider_id: openaiProviderId,
+      model_name: 'o1',
+      display_name: 'O1',
+      description: 'Previous generation reasoning model',
+      model_family: 'o1',
+      is_active: true,
+      is_recommended: false,
+      capabilities: JSON.stringify({
+        vision: false,
+        function_calling: false,
+        streaming: true,
+        prompt_caching: false,
+        reasoning: true,
+      }),
+      max_tokens: 100000,
+      context_window: 200000,
+      supports_streaming: true,
+      supports_function_calling: false,
+      supports_vision: false,
+      supports_prompt_caching: false,
+      pricing: JSON.stringify({
+        input_per_mtok: 15.0,
+        output_per_mtok: 60.0,
+        reasoning_per_mtok: 60.0,
+        context_pricing_tiers: [
+          { min_tokens: 0, max_tokens: 200000, input_per_mtok: 15.0 },
+        ],
+      }),
+      performance_tier: 'powerful',
+      avg_latency_ms: 10000,
+      release_date: '2024-12-17',
+      metadata: JSON.stringify({
+        category: 'advanced_reasoning',
+        use_cases: ['complex_math', 'science', 'coding'],
+      }),
+    },
+    {
+      provider_id: openaiProviderId,
+      model_name: 'o1-pro',
+      display_name: 'O1 Pro',
+      description: 'O1 with more compute for better responses on hard problems',
+      model_family: 'o1',
+      is_active: true,
+      is_recommended: false,
+      capabilities: JSON.stringify({
+        vision: false,
+        function_calling: false,
+        streaming: true,
+        prompt_caching: false,
+        reasoning: true,
+      }),
+      max_tokens: 100000,
+      context_window: 200000,
+      supports_streaming: true,
+      supports_function_calling: false,
+      supports_vision: false,
+      supports_prompt_caching: false,
+      pricing: JSON.stringify({
+        input_per_mtok: 30.0,
+        output_per_mtok: 120.0,
+        reasoning_per_mtok: 120.0,
+        context_pricing_tiers: [
+          { min_tokens: 0, max_tokens: 200000, input_per_mtok: 30.0 },
+        ],
+      }),
+      performance_tier: 'powerful',
+      avg_latency_ms: 15000,
+      release_date: '2024-12-17',
+      metadata: JSON.stringify({
+        category: 'advanced_reasoning',
+        use_cases: ['research', 'complex_analysis', 'hard_problems'],
+      }),
+    },
+  ];
+
+  await knex('models').insert(additionalOpenAIModels);
+
+  // ============================================================================
+  // GROQ - ADDITIONAL MODELS
+  // ============================================================================
+
+  const groqProvider = await knex('providers')
+    .where({ provider_name: 'groq' })
+    .first();
+
+  if (!groqProvider) {
+    throw new Error('Groq provider not found. Run 003_multi_provider_models.ts first.');
+  }
+
+  const groqProviderId = groqProvider.id;
+
+  const additionalGroqModels = [
+    // GPT OSS Series
+    {
+      provider_id: groqProviderId,
+      model_name: 'gpt-oss-20b',
+      display_name: 'GPT OSS 20B',
+      description: 'Open source GPT model with 1000 tokens/sec performance',
+      model_family: 'gpt-oss',
+      is_active: true,
+      is_recommended: true,
+      capabilities: JSON.stringify({
+        vision: false,
+        function_calling: true,
+        streaming: true,
+        prompt_caching: true, // Groq supports 50% discount on cached tokens
+      }),
+      max_tokens: 8192,
+      context_window: 128000,
+      supports_streaming: true,
+      supports_function_calling: true,
+      supports_vision: false,
+      supports_prompt_caching: true,
+      pricing: JSON.stringify({
+        input_per_mtok: 0.075,
+        output_per_mtok: 0.30,
+        cache_read_per_mtok: 0.0375, // 50% discount
+        context_pricing_tiers: [
+          { min_tokens: 0, max_tokens: 128000, input_per_mtok: 0.075 },
+        ],
+      }),
+      performance_tier: 'fast',
+      avg_latency_ms: 150,
+      release_date: '2024-10-01',
+      metadata: JSON.stringify({
+        category: 'open_source',
+        use_cases: ['general_purpose', 'coding', 'chat'],
+        tokens_per_second: 1000,
+      }),
+    },
+    {
+      provider_id: groqProviderId,
+      model_name: 'gpt-oss-safeguard-20b',
+      display_name: 'GPT OSS Safeguard 20B',
+      description: 'Safety-focused GPT OSS variant with content filtering',
+      model_family: 'gpt-oss',
+      is_active: true,
+      is_recommended: false,
+      capabilities: JSON.stringify({
+        vision: false,
+        function_calling: true,
+        streaming: true,
+        prompt_caching: true,
+        safety_filtering: true,
+      }),
+      max_tokens: 8192,
+      context_window: 128000,
+      supports_streaming: true,
+      supports_function_calling: true,
+      supports_vision: false,
+      supports_prompt_caching: true,
+      pricing: JSON.stringify({
+        input_per_mtok: 0.075,
+        output_per_mtok: 0.30,
+        cache_read_per_mtok: 0.0375,
+        context_pricing_tiers: [
+          { min_tokens: 0, max_tokens: 128000, input_per_mtok: 0.075 },
+        ],
+      }),
+      performance_tier: 'fast',
+      avg_latency_ms: 150,
+      release_date: '2024-10-01',
+      metadata: JSON.stringify({
+        category: 'open_source',
+        use_cases: ['safe_chat', 'content_moderation'],
+        tokens_per_second: 1000,
+      }),
+    },
+    {
+      provider_id: groqProviderId,
+      model_name: 'gpt-oss-120b',
+      display_name: 'GPT OSS 120B',
+      description: 'Large open source GPT model with enhanced capabilities',
+      model_family: 'gpt-oss',
+      is_active: true,
+      is_recommended: false,
+      capabilities: JSON.stringify({
+        vision: false,
+        function_calling: true,
+        streaming: true,
+        prompt_caching: true,
+      }),
+      max_tokens: 8192,
+      context_window: 128000,
+      supports_streaming: true,
+      supports_function_calling: true,
+      supports_vision: false,
+      supports_prompt_caching: true,
+      pricing: JSON.stringify({
+        input_per_mtok: 0.15,
+        output_per_mtok: 0.60,
+        cache_read_per_mtok: 0.075,
+        context_pricing_tiers: [
+          { min_tokens: 0, max_tokens: 128000, input_per_mtok: 0.15 },
+        ],
+      }),
+      performance_tier: 'balanced',
+      avg_latency_ms: 300,
+      release_date: '2024-10-01',
+      metadata: JSON.stringify({
+        category: 'open_source',
+        use_cases: ['complex_reasoning', 'coding', 'analysis'],
+        tokens_per_second: 500,
+      }),
+    },
+
+    // Llama 4 Series
+    {
+      provider_id: groqProviderId,
+      model_name: 'llama-4-scout-17bx16e',
+      display_name: 'Llama 4 Scout (17Bx16E)',
+      description: 'Llama 4 mixture of experts model with balanced performance',
+      model_family: 'llama-4',
+      is_active: true,
+      is_recommended: true,
+      capabilities: JSON.stringify({
+        vision: false,
+        function_calling: true,
+        streaming: true,
+        mixture_of_experts: true,
+      }),
+      max_tokens: 16384,
+      context_window: 128000,
+      supports_streaming: true,
+      supports_function_calling: true,
+      supports_vision: false,
+      supports_prompt_caching: false,
+      pricing: JSON.stringify({
+        input_per_mtok: 0.11,
+        output_per_mtok: 0.34,
+        context_pricing_tiers: [
+          { min_tokens: 0, max_tokens: 128000, input_per_mtok: 0.11 },
+        ],
+      }),
+      performance_tier: 'fast',
+      avg_latency_ms: 250,
+      release_date: '2025-11-01',
+      metadata: JSON.stringify({
+        category: 'open_source',
+        use_cases: ['general_purpose', 'coding', 'analysis'],
+        tokens_per_second: 594,
+        experts: '17Bx16E',
+      }),
+    },
+    {
+      provider_id: groqProviderId,
+      model_name: 'llama-4-maverick-17bx128e',
+      display_name: 'Llama 4 Maverick (17Bx128E)',
+      description: 'Large Llama 4 MoE model with 128 experts for complex tasks',
+      model_family: 'llama-4',
+      is_active: true,
+      is_recommended: false,
+      capabilities: JSON.stringify({
+        vision: false,
+        function_calling: true,
+        streaming: true,
+        mixture_of_experts: true,
+      }),
+      max_tokens: 16384,
+      context_window: 128000,
+      supports_streaming: true,
+      supports_function_calling: true,
+      supports_vision: false,
+      supports_prompt_caching: false,
+      pricing: JSON.stringify({
+        input_per_mtok: 0.20,
+        output_per_mtok: 0.60,
+        context_pricing_tiers: [
+          { min_tokens: 0, max_tokens: 128000, input_per_mtok: 0.20 },
+        ],
+      }),
+      performance_tier: 'balanced',
+      avg_latency_ms: 280,
+      release_date: '2025-11-01',
+      metadata: JSON.stringify({
+        category: 'open_source',
+        use_cases: ['complex_reasoning', 'coding', 'research'],
+        tokens_per_second: 562,
+        experts: '17Bx128E',
+      }),
+    },
+    {
+      provider_id: groqProviderId,
+      model_name: 'llama-guard-4-12b',
+      display_name: 'Llama Guard 4 12B',
+      description: 'Safety and content moderation model for Llama 4',
+      model_family: 'llama-4',
+      is_active: true,
+      is_recommended: false,
+      capabilities: JSON.stringify({
+        vision: false,
+        function_calling: false,
+        streaming: true,
+        safety_classification: true,
+      }),
+      max_tokens: 8192,
+      context_window: 128000,
+      supports_streaming: true,
+      supports_function_calling: false,
+      supports_vision: false,
+      supports_prompt_caching: false,
+      pricing: JSON.stringify({
+        input_per_mtok: 0.20,
+        output_per_mtok: 0.20,
+        context_pricing_tiers: [
+          { min_tokens: 0, max_tokens: 128000, input_per_mtok: 0.20 },
+        ],
+      }),
+      performance_tier: 'fast',
+      avg_latency_ms: 200,
+      release_date: '2025-11-01',
+      metadata: JSON.stringify({
+        category: 'specialized',
+        use_cases: ['safety', 'content_moderation', 'policy_violation_detection'],
+        tokens_per_second: 325,
+      }),
+    },
+
+    // Qwen Series
+    {
+      provider_id: groqProviderId,
+      model_name: 'qwen3-32b',
+      display_name: 'Qwen3 32B',
+      description: 'Latest Qwen model with enhanced coding and mathematics',
+      model_family: 'qwen',
+      is_active: true,
+      is_recommended: true,
+      capabilities: JSON.stringify({
+        vision: false,
+        function_calling: true,
+        streaming: true,
+        json_mode: true,
+        tool_calling: true,
+      }),
+      max_tokens: 8192,
+      context_window: 131072,
+      supports_streaming: true,
+      supports_function_calling: true,
+      supports_vision: false,
+      supports_prompt_caching: false,
+      pricing: JSON.stringify({
+        input_per_mtok: 0.29,
+        output_per_mtok: 0.59,
+        context_pricing_tiers: [
+          { min_tokens: 0, max_tokens: 131072, input_per_mtok: 0.29 },
+        ],
+      }),
+      performance_tier: 'fast',
+      avg_latency_ms: 180,
+      release_date: '2025-01-15',
+      metadata: JSON.stringify({
+        category: 'open_source',
+        use_cases: ['coding', 'mathematics', 'reasoning', 'tool_calling'],
+        tokens_per_second: 662,
+      }),
+    },
+    {
+      provider_id: groqProviderId,
+      model_name: 'qwen-2.5-32b',
+      display_name: 'Qwen 2.5 32B',
+      description: 'Qwen model with improved instruction adherence and structured data understanding',
+      model_family: 'qwen',
+      is_active: true,
+      is_recommended: false,
+      capabilities: JSON.stringify({
+        vision: false,
+        function_calling: true,
+        streaming: true,
+        json_mode: true,
+        tool_calling: true,
+      }),
+      max_tokens: 8192,
+      context_window: 128000,
+      supports_streaming: true,
+      supports_function_calling: true,
+      supports_vision: false,
+      supports_prompt_caching: false,
+      pricing: JSON.stringify({
+        input_per_mtok: 0.29,
+        output_per_mtok: 0.39,
+        context_pricing_tiers: [
+          { min_tokens: 0, max_tokens: 128000, input_per_mtok: 0.29 },
+        ],
+      }),
+      performance_tier: 'fast',
+      avg_latency_ms: 190,
+      release_date: '2024-11-20',
+      metadata: JSON.stringify({
+        category: 'open_source',
+        use_cases: ['coding', 'mathematics', 'chatbot', 'structured_data'],
+        tokens_per_second: 397,
+      }),
+    },
+
+    // DeepSeek
+    {
+      provider_id: groqProviderId,
+      model_name: 'deepseek-r1-distill-qwen-32b',
+      display_name: 'DeepSeek R1 Distill Qwen 32B',
+      description: 'Reasoning model excelling at math and coding, competitive with o1-mini',
+      model_family: 'deepseek',
+      is_active: true,
+      is_recommended: true,
+      capabilities: JSON.stringify({
+        vision: false,
+        function_calling: true,
+        streaming: true,
+        json_mode: true,
+        reasoning: true,
+        tool_calling: true,
+      }),
+      max_tokens: 16384,
+      context_window: 128000,
+      supports_streaming: true,
+      supports_function_calling: true,
+      supports_vision: false,
+      supports_prompt_caching: false,
+      pricing: JSON.stringify({
+        input_per_mtok: 0.29,
+        output_per_mtok: 0.99,
+        context_pricing_tiers: [
+          { min_tokens: 0, max_tokens: 128000, input_per_mtok: 0.29 },
+        ],
+      }),
+      performance_tier: 'balanced',
+      avg_latency_ms: 400,
+      release_date: '2025-01-20',
+      metadata: JSON.stringify({
+        category: 'reasoning',
+        use_cases: ['advanced_math', 'coding', 'competitive_programming', 'reasoning'],
+        tokens_per_second: 388,
+        benchmarks: {
+          codeforces: 1691,
+          aime_2024: 83.3,
+          math_500: 94.3,
+          gpqa_diamond: 62.1,
+          livecode: 57.2,
+        },
+      }),
+    },
+
+    // Kimi
+    {
+      provider_id: groqProviderId,
+      model_name: 'kimi-k2-0905-1t',
+      display_name: 'Kimi K2-0905 1T',
+      description: '1 trillion parameter model with extended 256K context',
+      model_family: 'kimi',
+      is_active: true,
+      is_recommended: false,
+      capabilities: JSON.stringify({
+        vision: false,
+        function_calling: true,
+        streaming: true,
+        extended_context: true,
+      }),
+      max_tokens: 8192,
+      context_window: 256000,
+      supports_streaming: true,
+      supports_function_calling: true,
+      supports_vision: false,
+      supports_prompt_caching: false,
+      pricing: JSON.stringify({
+        input_per_mtok: 1.0,
+        output_per_mtok: 3.0,
+        context_pricing_tiers: [
+          { min_tokens: 0, max_tokens: 256000, input_per_mtok: 1.0 },
+        ],
+      }),
+      performance_tier: 'powerful',
+      avg_latency_ms: 800,
+      release_date: '2024-09-05',
+      metadata: JSON.stringify({
+        category: 'open_source',
+        use_cases: ['long_context', 'document_analysis', 'research'],
+        tokens_per_second: 200,
+        parameters: '1T',
+      }),
+    },
+  ];
+
+  await knex('models').insert(additionalGroqModels);
+}

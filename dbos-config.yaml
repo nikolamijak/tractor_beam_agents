@@ -1,0 +1,23 @@
+## Database Configuration
+database:
+  hostname: 'localhost'
+  port: 5432
+  username: 'dmap_user'
+  password: ${DB_PASSWORD}
+  app_db_name: 'dmap'
+  sys_db_name: 'dmap'
+  app_db_client: 'knex'
+  migrate: ['knex', 'migrate:latest']
+  rollback: ['knex', 'migrate:rollback']
+
+## Application Configuration
+name: dmap
+language: node
+
+## Runtime Configuration
+runtimeConfig:
+  start: ['npm', 'run', 'dev']
+
+## Environment
+env:
+  DB_PASSWORD: ${DB_PASSWORD}

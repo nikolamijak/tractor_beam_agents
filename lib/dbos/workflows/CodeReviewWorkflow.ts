@@ -195,13 +195,13 @@ async function codeReviewWorkflowFunction(
         error: codeQualityResult.error || 'Unknown error',
       });
       await broadcastWorkflowEvent(
-        DBOS.workflowID,
+        DBOS.workflowID!,
         'codeQualityReview',
         'step:failed',
         { error: codeQualityResult.error || 'Unknown error' },
         codeQualityDuration
       );
-      closeWorkflowSubscriptions(DBOS.workflowID);
+      closeWorkflowSubscriptions(DBOS.workflowID!);
       return {
         success: false,
         error: 'Code quality review failed: ' + (codeQualityResult.error || 'Unknown error'),
@@ -223,7 +223,7 @@ async function codeReviewWorkflowFunction(
     });
 
     await broadcastWorkflowEvent(
-      DBOS.workflowID,
+      DBOS.workflowID!,
       'codeQualityReview',
       'step:completed',
       {
@@ -261,13 +261,13 @@ async function codeReviewWorkflowFunction(
         error: securityResult.error || 'Unknown error',
       });
       await broadcastWorkflowEvent(
-        DBOS.workflowID,
+        DBOS.workflowID!,
         'securityReview',
         'step:failed',
         { error: securityResult.error || 'Unknown error' },
         securityDuration
       );
-      closeWorkflowSubscriptions(DBOS.workflowID);
+      closeWorkflowSubscriptions(DBOS.workflowID!);
       return {
         success: false,
         error: 'Security review failed: ' + (securityResult.error || 'Unknown error'),
@@ -289,7 +289,7 @@ async function codeReviewWorkflowFunction(
     });
 
     await broadcastWorkflowEvent(
-      DBOS.workflowID,
+      DBOS.workflowID!,
       'securityReview',
       'step:completed',
       {
@@ -327,13 +327,13 @@ async function codeReviewWorkflowFunction(
         error: testGenResult.error || 'Unknown error',
       });
       await broadcastWorkflowEvent(
-        DBOS.workflowID,
+        DBOS.workflowID!,
         'testGeneration',
         'step:failed',
         { error: testGenResult.error || 'Unknown error' },
         testGenDuration
       );
-      closeWorkflowSubscriptions(DBOS.workflowID);
+      closeWorkflowSubscriptions(DBOS.workflowID!);
       return {
         success: false,
         error: 'Test generation failed: ' + (testGenResult.error || 'Unknown error'),
@@ -355,7 +355,7 @@ async function codeReviewWorkflowFunction(
     });
 
     await broadcastWorkflowEvent(
-      DBOS.workflowID,
+      DBOS.workflowID!,
       'testGeneration',
       'step:completed',
       {
@@ -370,7 +370,7 @@ async function codeReviewWorkflowFunction(
     const overallScore = 'Review complete - check individual sections for details';
 
     // Close subscriptions on successful completion
-    closeWorkflowSubscriptions(DBOS.workflowID);
+    closeWorkflowSubscriptions(DBOS.workflowID!);
 
     return {
       success: true,
@@ -388,12 +388,12 @@ async function codeReviewWorkflowFunction(
       stackTrace: (error as Error).stack,
     });
     await broadcastWorkflowEvent(
-      DBOS.workflowID,
+      DBOS.workflowID!,
       'workflow',
       'workflow:error',
       { error: (error as Error).message }
     );
-    closeWorkflowSubscriptions(DBOS.workflowID);
+    closeWorkflowSubscriptions(DBOS.workflowID!);
     console.error('[CodeReviewWorkflow] Error:', error);
     return {
       success: false,

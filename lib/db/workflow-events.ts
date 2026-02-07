@@ -4,8 +4,6 @@
  */
 
 import { db } from './client';
-import type { Knex } from 'knex';
-
 /**
  * Workflow event from dbos.workflow_events table
  */
@@ -23,8 +21,8 @@ export interface WorkflowStatus {
   workflow_uuid: string;
   name: string;
   status: 'PENDING' | 'SUCCESS' | 'ERROR' | 'ENQUEUED' | 'CANCELLED' | 'RETRIES_EXCEEDED';
-  created_at: Date;
-  updated_at: Date;
+  created_at: number;
+  updated_at: number;
   output: any | null;
   error: string | null;
 }
@@ -70,8 +68,8 @@ export async function getWorkflowStatus(workflowId: string): Promise<WorkflowSta
     workflow_uuid: row.workflow_uuid,
     name: row.name,
     status: row.status,
-    created_at: new Date(row.created_at),
-    updated_at: new Date(row.updated_at),
+    created_at: row.created_at,
+    updated_at: row.updated_at,
     output: row.output ? (typeof row.output === 'string' ? JSON.parse(row.output) : row.output) : null,
     error: row.error || null
   };
@@ -95,8 +93,8 @@ export async function getAllWorkflows(limit: number = 50, offset: number = 0): P
     workflow_uuid: row.workflow_uuid,
     name: row.name,
     status: row.status,
-    created_at: new Date(row.created_at),
-    updated_at: new Date(row.updated_at),
+    created_at: row.created_at,
+    updated_at: row.updated_at,
     output: row.output ? (typeof row.output === 'string' ? JSON.parse(row.output) : row.output) : null,
     error: row.error || null
   }));

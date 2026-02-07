@@ -217,13 +217,13 @@ async function prototypeWorkflowFunction(
         error: conceptResult.error || 'Unknown error',
       });
       await broadcastWorkflowEvent(
-        DBOS.workflowID,
+        DBOS.workflowID!,
         'prototypeConceptStep',
         'step:failed',
         { error: conceptResult.error || 'Unknown error' },
         conceptDuration
       );
-      closeWorkflowSubscriptions(DBOS.workflowID);
+      closeWorkflowSubscriptions(DBOS.workflowID!);
       return {
         success: false,
         error: 'Prototype concept step failed: ' + (conceptResult.error || 'Unknown error'),
@@ -245,7 +245,7 @@ async function prototypeWorkflowFunction(
     });
 
     await broadcastWorkflowEvent(
-      DBOS.workflowID,
+      DBOS.workflowID!,
       'prototypeConceptStep',
       'step:completed',
       {
@@ -283,13 +283,13 @@ async function prototypeWorkflowFunction(
         error: productSpecResult.error || 'Unknown error',
       });
       await broadcastWorkflowEvent(
-        DBOS.workflowID,
+        DBOS.workflowID!,
         'productSpecStep',
         'step:failed',
         { error: productSpecResult.error || 'Unknown error' },
         productSpecDuration
       );
-      closeWorkflowSubscriptions(DBOS.workflowID);
+      closeWorkflowSubscriptions(DBOS.workflowID!);
       return {
         success: false,
         error: 'Product specification step failed: ' + (productSpecResult.error || 'Unknown error'),
@@ -311,7 +311,7 @@ async function prototypeWorkflowFunction(
     });
 
     await broadcastWorkflowEvent(
-      DBOS.workflowID,
+      DBOS.workflowID!,
       'productSpecStep',
       'step:completed',
       {
@@ -349,13 +349,13 @@ async function prototypeWorkflowFunction(
         error: mvpResult.error || 'Unknown error',
       });
       await broadcastWorkflowEvent(
-        DBOS.workflowID,
+        DBOS.workflowID!,
         'mvpDevelopmentStep',
         'step:failed',
         { error: mvpResult.error || 'Unknown error' },
         mvpDuration
       );
-      closeWorkflowSubscriptions(DBOS.workflowID);
+      closeWorkflowSubscriptions(DBOS.workflowID!);
       return {
         success: false,
         error: 'MVP development step failed: ' + (mvpResult.error || 'Unknown error'),
@@ -377,7 +377,7 @@ async function prototypeWorkflowFunction(
     });
 
     await broadcastWorkflowEvent(
-      DBOS.workflowID,
+      DBOS.workflowID!,
       'mvpDevelopmentStep',
       'step:completed',
       {
@@ -415,13 +415,13 @@ async function prototypeWorkflowFunction(
         error: validationResult.error || 'Unknown error',
       });
       await broadcastWorkflowEvent(
-        DBOS.workflowID,
+        DBOS.workflowID!,
         'mvpValidationStep',
         'step:failed',
         { error: validationResult.error || 'Unknown error' },
         validationDuration
       );
-      closeWorkflowSubscriptions(DBOS.workflowID);
+      closeWorkflowSubscriptions(DBOS.workflowID!);
       return {
         success: false,
         error: 'MVP validation step failed: ' + (validationResult.error || 'Unknown error'),
@@ -443,7 +443,7 @@ async function prototypeWorkflowFunction(
     });
 
     await broadcastWorkflowEvent(
-      DBOS.workflowID,
+      DBOS.workflowID!,
       'mvpValidationStep',
       'step:completed',
       {
@@ -455,7 +455,7 @@ async function prototypeWorkflowFunction(
     );
 
     // Close subscriptions on successful completion
-    closeWorkflowSubscriptions(DBOS.workflowID);
+    closeWorkflowSubscriptions(DBOS.workflowID!);
 
     return {
       success: true,
@@ -473,12 +473,12 @@ async function prototypeWorkflowFunction(
       stackTrace: (error as Error).stack,
     });
     await broadcastWorkflowEvent(
-      DBOS.workflowID,
+      DBOS.workflowID!,
       'workflow',
       'workflow:error',
       { error: (error as Error).message }
     );
-    closeWorkflowSubscriptions(DBOS.workflowID);
+    closeWorkflowSubscriptions(DBOS.workflowID!);
     console.error('[PrototypeWorkflow] Error:', error);
     return {
       success: false,

@@ -164,7 +164,7 @@ Technology: ${input.technology}
 
       // Broadcast failure event
       await broadcastWorkflowEvent(
-        DBOS.workflowID,
+        DBOS.workflowID!,
         'developerStep',
         'step:failed',
         {
@@ -174,7 +174,7 @@ Technology: ${input.technology}
       );
 
       // Close subscriptions on workflow early termination
-      closeWorkflowSubscriptions(DBOS.workflowID);
+      closeWorkflowSubscriptions(DBOS.workflowID!);
 
       return {
         success: false,
@@ -199,7 +199,7 @@ Technology: ${input.technology}
 
     // Broadcast completion event
     await broadcastWorkflowEvent(
-      DBOS.workflowID,
+      DBOS.workflowID!,
       'developerStep',
       'step:completed',
       {
@@ -239,7 +239,7 @@ Technology: ${input.technology}
 
       // Broadcast failure event
       await broadcastWorkflowEvent(
-        DBOS.workflowID,
+        DBOS.workflowID!,
         'qaStep',
         'step:failed',
         {
@@ -249,7 +249,7 @@ Technology: ${input.technology}
       );
 
       // Close subscriptions on workflow early termination
-      closeWorkflowSubscriptions(DBOS.workflowID);
+      closeWorkflowSubscriptions(DBOS.workflowID!);
 
       return {
         success: false,
@@ -274,7 +274,7 @@ Technology: ${input.technology}
 
     // Broadcast completion event
     await broadcastWorkflowEvent(
-      DBOS.workflowID,
+      DBOS.workflowID!,
       'qaStep',
       'step:completed',
       {
@@ -314,7 +314,7 @@ Technology: ${input.technology}
 
       // Broadcast failure event
       await broadcastWorkflowEvent(
-        DBOS.workflowID,
+        DBOS.workflowID!,
         'devOpsStep',
         'step:failed',
         {
@@ -324,7 +324,7 @@ Technology: ${input.technology}
       );
 
       // Close subscriptions on workflow early termination
-      closeWorkflowSubscriptions(DBOS.workflowID);
+      closeWorkflowSubscriptions(DBOS.workflowID!);
 
       return {
         success: false,
@@ -349,7 +349,7 @@ Technology: ${input.technology}
 
     // Broadcast completion event
     await broadcastWorkflowEvent(
-      DBOS.workflowID,
+      DBOS.workflowID!,
       'devOpsStep',
       'step:completed',
       {
@@ -361,7 +361,7 @@ Technology: ${input.technology}
     );
 
     // Close subscriptions on successful completion
-    closeWorkflowSubscriptions(DBOS.workflowID);
+    closeWorkflowSubscriptions(DBOS.workflowID!);
 
     return {
       success: true,
@@ -381,7 +381,7 @@ Technology: ${input.technology}
 
     // Broadcast error event
     await broadcastWorkflowEvent(
-      DBOS.workflowID,
+      DBOS.workflowID!,
       'workflow',
       'workflow:error',
       {
@@ -390,7 +390,7 @@ Technology: ${input.technology}
     );
 
     // Close subscriptions on error
-    closeWorkflowSubscriptions(DBOS.workflowID);
+    closeWorkflowSubscriptions(DBOS.workflowID!);
 
     console.error('[StoryImplementationWorkflow] Error:', error);
     return {

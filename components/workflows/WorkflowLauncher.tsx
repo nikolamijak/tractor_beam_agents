@@ -16,7 +16,7 @@ interface Workflow {
 // These match the actual workflow implementations in lib/dbos/workflows/
 const WORKFLOW_DEFINITIONS: Workflow[] = [
   {
-    name: 'DocumentToStoriesWorkflow',
+    name: 'DocumentToStories',
     description: 'Parse project documents and generate user stories with acceptance criteria',
     requiredInputs: ['documentContent'],
     optionalInputs: ['projectContext', 'existingStories'],

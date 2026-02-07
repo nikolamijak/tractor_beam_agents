@@ -196,7 +196,7 @@ async function documentToStoriesWorkflowFunction(
 
     // Broadcast SSE event to connected clients
     await broadcastWorkflowEvent(
-      DBOS.workflowID,
+      DBOS.workflowID!,
       'intakeStep',
       'step:completed',
       {
@@ -242,7 +242,7 @@ async function documentToStoriesWorkflowFunction(
 
     // Broadcast SSE event to connected clients
     await broadcastWorkflowEvent(
-      DBOS.workflowID,
+      DBOS.workflowID!,
       'ideationStep',
       'step:completed',
       {
@@ -288,7 +288,7 @@ async function documentToStoriesWorkflowFunction(
 
     // Broadcast SSE event to connected clients
     await broadcastWorkflowEvent(
-      DBOS.workflowID,
+      DBOS.workflowID!,
       'productOwnerStep',
       'step:completed',
       {
@@ -309,7 +309,7 @@ async function documentToStoriesWorkflowFunction(
     );
 
     // Close SSE subscriptions on successful completion
-    closeWorkflowSubscriptions(DBOS.workflowID);
+    closeWorkflowSubscriptions(DBOS.workflowID!);
 
     return {
       success: true,
@@ -329,7 +329,7 @@ async function documentToStoriesWorkflowFunction(
 
     // Broadcast error event to connected clients
     await broadcastWorkflowEvent(
-      DBOS.workflowID,
+      DBOS.workflowID!,
       'workflow',
       'workflow:error',
       {
@@ -338,7 +338,7 @@ async function documentToStoriesWorkflowFunction(
     );
 
     // Close SSE subscriptions on error
-    closeWorkflowSubscriptions(DBOS.workflowID);
+    closeWorkflowSubscriptions(DBOS.workflowID!);
 
     DBOS.logger.error(`[DocumentToStories] Workflow failed: ${(error as Error).message}`);
     throw error;

@@ -5,7 +5,7 @@
 
 import { NextResponse } from 'next/server';
 import { getAllWorkflows } from '@/lib/db/workflow-events';
-
+import { convertUnixTimestampToDate } from '@/lib/utils/formatting';
 /**
  * GET /api/workflows
  * List all workflow executions from dbos.workflow_status table
@@ -26,9 +26,9 @@ export async function GET(request: Request) {
       id: workflow.workflow_uuid,
       workflowType: workflow.name,
       status: workflow.status,
-      createdAt: workflow.created_at.toISOString(),
-      updatedAt: workflow.updated_at.toISOString(),
-      duration: workflow.updated_at.getTime() - workflow.created_at.getTime(),
+      createdAt: convertUnixTimestampToDate(workflow.created_at).toISOString(),
+      updatedAt: convertUnixTimestampToDate(workflow.updated_at).toISOString(),
+      duration: workflow.updated_at - workflow.created_at,
       error: workflow.error,
       output: workflow.output
     }));

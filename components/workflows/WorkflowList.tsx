@@ -66,8 +66,9 @@ function formatDuration(ms: number): string {
 /**
  * Format timestamp to relative time
  */
-function formatRelativeTime(isoString: string): string {
-  const date = new Date(isoString);
+function formatRelativeTime(dateStr: string): string {
+  console.log(dateStr);  
+  const date = new Date(dateStr);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffSeconds = Math.floor(diffMs / 1000);

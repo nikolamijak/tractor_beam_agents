@@ -17,6 +17,7 @@ const statusStyles = {
     text: 'text-gray-800',
     border: 'border-gray-300',
     icon: '⏳',
+    animation: '',
   },
   running: {
     bg: 'bg-blue-100',
@@ -30,12 +31,14 @@ const statusStyles = {
     text: 'text-green-800',
     border: 'border-green-400',
     icon: '✓',
+    animation: '',
   },
   failed: {
     bg: 'bg-red-100',
     text: 'text-red-800',
     border: 'border-red-400',
     icon: '✕',
+    animation: '',
   },
 };
 
@@ -50,7 +53,7 @@ const StepNodeComponent = React.memo(({ data }: StepNodeProps) => {
       className={`w-48 px-4 py-3 rounded-lg border-2 ${style.bg} ${style.text} ${
         style.border
       } cursor-pointer transition-all hover:shadow-md ${
-        style.animation || ''
+        style.animation
       } ${isSelected ? 'ring-2 ring-blue-500 shadow-lg' : ''}`}
     >
       <Handle type="target" position={Position.Top} />

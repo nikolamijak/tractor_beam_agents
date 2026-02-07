@@ -1,0 +1,61 @@
+/**
+ * DBOS Lazy Initialization
+ * Ensures DBOS is initialized only when needed (on first API call)
+ * This avoids Turbopack build-time issues with instrumentation
+ */
+
+import { launchDBOS } from './config';
+
+let isLaunched = false;
+let launchPromise: Promise<void> | null = null;
+
+/**
+ * Ensure DBOS is launched
+ * Safe to call multiple times - only launches once
+ * Use this in API routes before using DBOS workflows
+ */
+export async function ensureDBOSLaunched(): Promise<void> {
+  // If already launched, return immediately
+  if (isLaunched) {
+    return;
+  }
+
+  // If launch is in progress, wait for it
+  if (launchPromise) {
+    return launchPromise;
+  }
+
+  // Start launch
+  launchPromise = (async () => {
+    try {
+      console.log('[DBOS] Lazy initialization starting...');
+
+      // Import and register all workflows
+      await import('./workflows/DocumentToStoriesWorkflow');
+      await import('./workflows/StoryImplementationWorkflow');
+      await import('./workflows/CodeReviewWorkflow');
+      await import('./workflows/PrototypeWorkflow');
+
+      console.log('[DBOS] Workflows imported and registered');
+
+      // Launch DBOS
+      await launchDBOS();
+
+      isLaunched = true;
+      console.log('[DBOS] ✅ Lazy initialization complete');
+    } catch (error) {
+      console.error('[DBOS] ❌ Lazy initialization failed:', error);
+      launchPromise = null; // Allow retry
+      throw error;
+    }
+  })();
+
+  return launchPromise;
+}
+
+/**
+ * Check if DBOS is launched
+ */
+export function isDBOSLaunched(): boolean {
+  return isLaunched;
+}
