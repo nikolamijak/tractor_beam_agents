@@ -11,9 +11,10 @@ Tractor Beam is an enterprise-grade AI agent orchestration system that automates
 ### Key Features
 
 - **19 Specialized AI Agents**: Workflow, innovation, and utility agents for every SDLC phase
+- **Multi-Provider AI Support**: Seamlessly integrate Anthropic, OpenAI, Groq, and other LLM providers
 - **Durable Workflows**: Fault-tolerant multi-step processes using DBOS SDK
-- **100% Data-Driven**: Add and configure agents without code changes
-- **Full Traceability**: Complete audit trail of all AI interactions
+- **100% Data-Driven**: Add and configure agents, providers, and models without code changes
+- **Full Traceability**: Complete audit trail of all AI interactions with cost tracking
 - **Technology Agnostic**: Extensible framework supporting multiple tech stacks
 
 ### Use Cases
@@ -31,7 +32,7 @@ Tractor Beam is an enterprise-grade AI agent orchestration system that automates
 
 - **Node.js**: >=22.12.0 (see `.nvmrc`)
 - **Docker**: For PostgreSQL (or use external PostgreSQL instance)
-- **Anthropic API Key**: Get from [Anthropic Console](https://console.anthropic.com/)
+- **AI Provider API Key**: Supports Anthropic, OpenAI, Groq, and other LLM providers
 
 ### Installation
 
@@ -44,8 +45,8 @@ cd tractor_beam
 npm install
 
 # Copy environment template
-cp .env.example .env.local
-# Edit .env.local with your configuration (DB credentials, Anthropic API key)
+cp .env.local.example .env.local
+# Edit .env.local with your configuration (DB credentials, AI provider API keys)
 
 # Start PostgreSQL
 docker-compose up -d
@@ -98,7 +99,7 @@ npm run verify:dbos              # Verify DBOS setup
 | **Database** | PostgreSQL | 16 |
 | **Query Builder** | Knex.js | 3.2.0 |
 | **Workflow Engine** | DBOS SDK | 4.7+ |
-| **AI Provider** | Anthropic Claude | claude-sonnet-4 |
+| **AI Providers** | Multi-provider support | Anthropic, OpenAI, Groq, etc. |
 | **Styling** | Tailwind CSS | 4.1 |
 
 ---
@@ -107,16 +108,27 @@ npm run verify:dbos              # Verify DBOS setup
 
 ### Data-Driven Agent System
 
-All agent definitions (including system prompts) are stored in PostgreSQL. Add new agents via API without code changes:
+All agent definitions (including system prompts) and AI provider configurations are stored in PostgreSQL. Add new agents and providers via API without code changes:
 
 ```bash
+# Add a new AI provider
+curl -X POST http://localhost:3000/api/providers \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "openai",
+    "displayName": "OpenAI",
+    "apiKey": "sk-...",
+    "baseUrl": "https://api.openai.com/v1"
+  }'
+
+# Add a new agent with your preferred model
 curl -X POST http://localhost:3000/api/agents \
   -H "Content-Type: application/json" \
   -d '{
     "agentName": "custom-agent",
     "displayName": "Custom Agent",
     "systemPrompt": "You are...",
-    "model": "claude-sonnet-4-20250514"
+    "modelId": "gpt-4o"
   }'
 ```
 
@@ -218,19 +230,21 @@ Create `.env.local` with:
 
 ```bash
 # Database
-DATABASE_URL=postgresql://dmap_user:password@localhost:5432/dmap
+DATABASE_URL=postgresql://tractor_beam_user:password@localhost:5432/tractor_beam
 DB_HOST=localhost
 DB_PORT=5432
-DB_NAME=dmap
-DB_USER=dmap_user
-DB_PASSWORD=dmap_dev_password
+DB_NAME=tractor_beam
+DB_USER=tractor_beam_user
+DB_PASSWORD=your_password_here
 
 # DBOS (uses same database)
-DBOS_SYSTEM_DATABASE_URL=postgresql://dmap_user:password@localhost:5432/dmap
-DBOS_APP_NAME=dmap
+DBOS_SYSTEM_DATABASE_URL=postgresql://tractor_beam_user:password@localhost:5432/tractor_beam
+DBOS_APP_NAME=tractor_beam
 
-# Anthropic
-ANTHROPIC_API_KEY=sk-ant-...
+# AI Provider API Keys (configure through UI or add directly)
+ANTHROPIC_API_KEY=sk-ant-...        # Optional: Anthropic Claude
+# OPENAI_API_KEY=sk-...              # Optional: OpenAI GPT
+# GROQ_API_KEY=gsk_...               # Optional: Groq
 
 # App
 NEXT_PUBLIC_APP_URL=http://localhost:3000
@@ -251,6 +265,24 @@ PUT    /api/agents/[id]              # Update agent
 DELETE /api/agents/[id]              # Delete agent
 POST   /api/agents/[id]/execute      # Execute agent
 GET    /api/agents/[id]/health       # Health status
+```
+
+### Provider & Model Management
+
+```
+GET    /api/providers                # List AI providers
+POST   /api/providers                # Add provider
+GET    /api/providers/[id]           # Get provider details
+PUT    /api/providers/[id]           # Update provider
+DELETE /api/providers/[id]           # Delete provider
+POST   /api/providers/[id]/set-default  # Set default provider
+
+GET    /api/models                   # List available models
+POST   /api/models                   # Add model
+GET    /api/models/[id]              # Get model details
+PUT    /api/models/[id]              # Update model
+DELETE /api/models/[id]              # Delete model
+GET    /api/models/by-provider/[name] # Get models by provider
 ```
 
 ### Workflow Management
@@ -281,9 +313,11 @@ curl -X POST http://localhost:3000/api/agents \
     "displayName": "Documentation Writer",
     "category": "utility",
     "systemPrompt": "You are an expert technical writer...",
-    "model": "claude-sonnet-4-20250514"
+    "modelId": "gpt-4o"
   }'
 ```
+
+**Note**: Use any model ID from your configured providers (e.g., `claude-sonnet-4-20250514`, `gpt-4o`, `llama-3.1-70b`, etc.)
 
 Agent is immediately available for execution.
 
@@ -432,7 +466,9 @@ See [System Design - Roadmap](docs/SYSTEM_DESIGN.md#roadmap) for detailed timeli
 Built with:
 - [Next.js](https://nextjs.org/) - React meta-framework
 - [DBOS SDK](https://docs.dbos.dev/) - Durable workflow engine
-- [Anthropic Claude](https://www.anthropic.com/) - AI reasoning
+- [Anthropic Claude](https://www.anthropic.com/) - AI reasoning (primary provider)
+- [OpenAI](https://openai.com/) - GPT models support
+- [Groq](https://groq.com/) - High-performance LLM inference
 - [PostgreSQL](https://www.postgresql.org/) - Database
 - [Knex.js](https://knexjs.org/) - Query builder
 - [Tailwind CSS](https://tailwindcss.com/) - Styling
